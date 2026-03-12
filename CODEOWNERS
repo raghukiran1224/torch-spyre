@@ -12,7 +12,7 @@
 *  @mudhakar @raghukiran1224 @viji560 @tehbone @svaidy
 
 # Inductor / compiler backend
-/torch_spyre/_inductor/  @dgrove-oss @avery-blanchard @cyang49 @marnold-ibm
+/torch_spyre/_inductor/  @dgrove-oss @avery-blanchard @cyang49 @marnold-ibm @tardieu
 
 # Device, execution, memory, and C++ runtime
 /torch_spyre/device/     @JRosenkranz @thoangtrvn
