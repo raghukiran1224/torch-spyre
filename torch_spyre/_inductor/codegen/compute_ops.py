@@ -341,6 +341,17 @@ def generate_sdsc(sdsc_spec):
                                     if tensor.backGap
                                     else {}
                                 ),
+                                **(
+                                    {
+                                        "indirectSrc_": {
+                                            "indexTensorIdx_": tensor.indirect_src.index_tensor_idx,
+                                            "baseOffsetExpr_": tensor.indirect_src.base_offset_expr,
+                                            "addressMode_": tensor.indirect_src.address_mode,
+                                        }
+                                    }
+                                    if tensor.indirect_src is not None
+                                    else {}
+                                ),
                                 "coordinates_": {
                                     "coordInfo": {
                                         str(dim): gen_coord_info_value(
@@ -389,6 +400,16 @@ def generate_sdsc(sdsc_spec):
                                 }
                                 if not tensor.allocation
                                 else {"lx": {"isPresent": 1}},
+                                **(
+                                    {
+                                        "indirectAccess_": {
+                                            "indexTensorIdx_": tensor.indirect_src.index_tensor_idx,
+                                            "addressMode_": tensor.indirect_src.address_mode,
+                                        }
+                                    }
+                                    if tensor.indirect_src is not None
+                                    else {}
+                                ),
                             }
                             for i, tensor in enumerate(sdsc_spec.args)
                         ],

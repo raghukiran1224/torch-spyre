@@ -14,7 +14,7 @@
 
 import dataclasses
 import math
-from typing import Any
+from typing import Any, Optional
 
 from sympy import Integer, Symbol, Expr, Mod, floor
 
@@ -30,12 +30,24 @@ from torch_spyre._inductor.constants import (
     SEGMENT_OFFSETS,
 )
 from torch_spyre._inductor.logging_utils import get_inductor_logger
-from torch_spyre._inductor.op_spec import OpSpec
-from torch_spyre._inductor.op_spec import TensorArg
+from torch_spyre._inductor.op_spec import OpSpec, TensorArg
 
 from .compute_ops import generate_sdsc
 
 logger = get_inductor_logger("codegen.superdsc")
+
+
+@dataclasses.dataclass
+class SDSCIndirectSrc:
+    """SDSC-level description of indirect (data-dependent) addressing.
+
+    Attached to an ``SDSCArgs`` when the tensor's HBM address along one
+    dimension is computed at runtime from another tensor's values.
+    """
+
+    index_tensor_idx: int
+    base_offset_expr: str
+    address_mode: str = "ibr"
 
 
 @dataclasses.dataclass
@@ -49,6 +61,7 @@ class SDSCArgs:
     allocation: dict[str, Any]
     start_address: int | Symbol
     backGap: dict[Symbol, int]
+    indirect_src: Optional[SDSCIndirectSrc] = None
 
     def __str__(self) -> str:
         scales = ", ".join(f"{k}={v}" for k, v in self.scales.items())
@@ -56,6 +69,7 @@ class SDSCArgs:
         offsets = ", ".join(f"{k}={v}" for k, v in self.offsets.items())
         max_dim_sizes = ", ".join(f"{k}={v}" for k, v in self.max_dim_sizes.items())
         allocation = ", ".join(f"{k}={v}" for k, v in self.allocation.items())
+        indirect = f"  indirect_src={self.indirect_src}\n" if self.indirect_src else ""
         return (
             f"SDSCArgs(\n"
             f"  layout={self.layout},\n"
@@ -67,6 +81,7 @@ class SDSCArgs:
             f"  allocation=[{allocation}],\n"
             f"  start_address={self.start_address}\n"
             f"  backGap={self.backGap}\n"
+            f"{indirect}"
             f")"
         )
 
@@ -124,6 +139,17 @@ class SDSCSpec:
         if self.constants:
             parts.append(
                 f"  constants=[{', '.join(f'{k}={v}' for k, v in self.constants.items())}]"
+            )
+        indirect_args = [a for a in self.args if a.indirect_src is not None]
+        if indirect_args:
+            parts.append(
+                "  indirect_tensors=["
+                + ", ".join(
+                    f"idx={a.indirect_src.index_tensor_idx}"
+                    f" expr={a.indirect_src.base_offset_expr}"
+                    for a in indirect_args
+                )
+                + "]"
             )
         return "SDSCSpec(\n" + "\n".join(parts) + "\n)"
 
@@ -322,6 +348,15 @@ def _create_sdsc_tensors(
             arg.device_dtype.elems_per_stick(),
             MATMUL_LAYOUT_LABELS if not use_op_dims else LAYOUT_LABELS,
         )
+
+        indirect_src = None
+        if arg.indirect_source is not None:
+            indirect_src = SDSCIndirectSrc(
+                index_tensor_idx=arg.indirect_source.index_arg_index,
+                base_offset_expr=str(arg.indirect_source.base_offset_expr),
+                address_mode="ibr",
+            )
+
         sdsc_args.append(
             SDSCArgs(
                 layout=label,
@@ -333,6 +368,7 @@ def _create_sdsc_tensors(
                 allocation=arg.allocation,
                 start_address=addr if not arg.allocation else arg.allocation["lx"],
                 backGap=backGap,
+                indirect_src=indirect_src,
             )
         )
 
