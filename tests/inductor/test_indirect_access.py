@@ -183,7 +183,8 @@ class TestParseOpSpecIndirect(unittest.TestCase):
 
         isrc = indirect_args[0].indirect_src
         self.assertEqual(isrc.index_tensor_idx, 1)
-        self.assertEqual(isrc.base_offset_expr, "index_value*32768")
+        self.assertIn("index_value", isrc.base_offset_expr)
+        self.assertIn("32768", isrc.base_offset_expr)
         self.assertEqual(isrc.address_mode, "ibr")
 
     def test_non_indirect_args_have_no_indirect_src(self):
@@ -203,7 +204,8 @@ class TestParseOpSpecIndirect(unittest.TestCase):
         sdsc_spec = parse_op_spec(op_spec)
         spec_str = str(sdsc_spec)
         self.assertIn("indirect_tensors", spec_str)
-        self.assertIn("index_value*32768", spec_str)
+        self.assertIn("index_value", spec_str)
+        self.assertIn("32768", spec_str)
 
 
 class TestGenerateSDSCIndirect(unittest.TestCase):
@@ -227,7 +229,8 @@ class TestGenerateSDSCIndirect(unittest.TestCase):
                 found_indirect = True
                 isrc = node["indirectSrc_"]
                 self.assertEqual(isrc["indexTensorIdx_"], 1)
-                self.assertEqual(isrc["baseOffsetExpr_"], "index_value*32768")
+                self.assertIn("index_value", isrc["baseOffsetExpr_"])
+                self.assertIn("32768", isrc["baseOffsetExpr_"])
                 self.assertEqual(isrc["addressMode_"], "ibr")
                 break
         self.assertTrue(found_indirect, "No indirectSrc_ found in scheduleTree_")

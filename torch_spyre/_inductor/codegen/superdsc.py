@@ -68,7 +68,11 @@ class SDSCArgs:
         strides = ", ".join(f"{k}={v}" for k, v in self.strides.items())
         offsets = ", ".join(f"{k}={v}" for k, v in self.offsets.items())
         max_dim_sizes = ", ".join(f"{k}={v}" for k, v in self.max_dim_sizes.items())
-        allocation = ", ".join(f"{k}={v}" for k, v in self.allocation.items())
+        allocation = (
+            ", ".join(f"{k}={v}" for k, v in self.allocation.items())
+            if self.allocation
+            else "None"
+        )
         indirect = f"  indirect_src={self.indirect_src}\n" if self.indirect_src else ""
         return (
             f"SDSCArgs(\n"
