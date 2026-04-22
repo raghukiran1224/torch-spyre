@@ -40,13 +40,17 @@ from torch_spyre._inductor.codegen.superdsc import (
 def _make_moe_op_spec():
     """Construct an OpSpec modelling a simplified MoE expert gather.
 
-    Layout:
-        arg 0 (input):   experts tensor  — [num_experts, hidden] — INDIRECT
-        arg 1 (input):   indices tensor  — [top_k] — direct, int32
-        arg 2 (output):  result tensor   — [top_k, hidden] — direct
+    Layout (fp16, elems_per_stick=64):
+        arg 0 (input):   experts — logically [num_experts=8, hidden=128]
+                          device_size = [hidden_sticks=2, num_experts=8, 64]
+                          INDIRECT on dim 0 (expert selection via indices)
+        arg 1 (input):   indices — logically [top_k=4]
+                          device_size = [1, top_k=4, 64]
+        arg 2 (output):  result  — logically [top_k=4, hidden=128]
+                          device_size = [hidden_sticks=2, top_k=4, 64]
 
-    The experts tensor is indirectly addressed: its dim-0 address comes from
-    the values in the indices tensor (arg 1).
+    device_coordinates follow the convention:
+        [floor(h/64), k, Mod(h, 64)] — last coord is within-stick position.
     """
     k_sym = sympy.Symbol("c0")
     h_sym = sympy.Symbol("c1")
@@ -56,8 +60,12 @@ def _make_moe_op_spec():
         is_input=True,
         arg_index=0,
         device_dtype=DataFormats.SEN169_FP16,
-        device_size=[8, 2, 1],
-        device_coordinates=[k_sym, h_sym, sympy.Integer(0)],
+        device_size=[2, 8, 64],
+        device_coordinates=[
+            sympy.floor(h_sym / 64),
+            k_sym,
+            sympy.Mod(h_sym, 64),
+        ],
         allocation=None,
         indirect_source=IndirectSource(
             index_arg_index=1,
@@ -69,9 +77,13 @@ def _make_moe_op_spec():
     indices_arg = TensorArg(
         is_input=True,
         arg_index=1,
-        device_dtype=DataFormats.IEEE_INT32,
-        device_size=[4, 1],
-        device_coordinates=[k_sym, sympy.Integer(0)],
+        device_dtype=DataFormats.SEN169_FP16,
+        device_size=[1, 4, 64],
+        device_coordinates=[
+            sympy.Integer(0),
+            k_sym,
+            sympy.Integer(0),
+        ],
         allocation=None,
     )
 
@@ -79,8 +91,12 @@ def _make_moe_op_spec():
         is_input=False,
         arg_index=2,
         device_dtype=DataFormats.SEN169_FP16,
-        device_size=[4, 2, 1],
-        device_coordinates=[k_sym, h_sym, sympy.Integer(0)],
+        device_size=[2, 4, 64],
+        device_coordinates=[
+            sympy.floor(h_sym / 64),
+            k_sym,
+            sympy.Mod(h_sym, 64),
+        ],
         allocation=None,
     )
 
@@ -268,16 +284,24 @@ class TestGenerateSDSCIndirect(unittest.TestCase):
             is_input=True,
             arg_index=0,
             device_dtype=DataFormats.SEN169_FP16,
-            device_size=[4, 2, 1],
-            device_coordinates=[x_sym, y_sym, sympy.Integer(0)],
+            device_size=[2, 4, 64],
+            device_coordinates=[
+                sympy.floor(y_sym / 64),
+                x_sym,
+                sympy.Mod(y_sym, 64),
+            ],
             allocation=None,
         )
         output_arg = TensorArg(
             is_input=False,
             arg_index=1,
             device_dtype=DataFormats.SEN169_FP16,
-            device_size=[4, 2, 1],
-            device_coordinates=[x_sym, y_sym, sympy.Integer(0)],
+            device_size=[2, 4, 64],
+            device_coordinates=[
+                sympy.floor(y_sym / 64),
+                x_sym,
+                sympy.Mod(y_sym, 64),
+            ],
             allocation=None,
         )
         op_spec = OpSpec(
