@@ -15,6 +15,7 @@
 BATCH_MATMUL_OP = "batchmatmul"
 IDENTITY_OP = "identity"
 MATMUL_REDUCTION_OP = "matmul"
+MOE_EXPERT_GATHER_OP = "moe_expert_gather"
 RESTICKIFY_OP = "ReStickifyOpHBM"
 
 DEVICE_NAME = "spyre"
@@ -46,6 +47,7 @@ SPYRE_FP32_OPS = [
     "exx2",
     "layernormnorm",
     "identity",
+    "moe_expert_gather",
     "overwrite",
 ]
 

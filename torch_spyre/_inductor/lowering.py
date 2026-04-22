@@ -583,6 +583,38 @@ def lower_restickify(x):
     return pw
 
 
+@register_spyre_lowering(torch.ops.spyre.moe_expert_gather)
+def lower_moe_expert_gather(experts, input, top_k_indices, gate_scores):
+    fn = lowering.ops_wrapper(torch.ops.spyre.moe_expert_gather.__name__)
+
+    experts.realize()
+    input.realize()
+    top_k_indices.realize()
+    gate_scores.realize()
+
+    expert_size = experts.get_size()[-1]
+
+    def inner_fn(index):
+        return fn(
+            experts.make_loader()(index),
+            input.make_loader()(index),
+            top_k_indices.make_loader()(index[:1]),
+            gate_scores.make_loader()(index[:1]),
+            expert_size,
+        )
+
+    pw = Pointwise.create(
+        device=input.get_device(),
+        dtype=input.get_dtype(),
+        inner_fn=inner_fn,
+        ranges=input.get_size(),
+        origin_node=input.get_origin_node(),
+        traceback=input.get_traceback(),
+    )
+    pw.realize()
+    return pw
+
+
 @register_spyre_lowering(torch.ops.aten.slice.Tensor, type_promotion_kind=None)
 def lower_slice(x, dim=0, start=None, end=None, step=1):
     result = lowering.slice_(x, dim=dim, start=start, end=end, step=step)

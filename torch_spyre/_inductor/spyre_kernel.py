@@ -46,7 +46,7 @@ from .pass_utils import (
 )
 from .views import compute_coordinates, align_tensors
 from .logging_utils import get_inductor_logger
-from .op_spec import OpSpec, TensorArg
+from .op_spec import IndirectSource, OpSpec, TensorArg
 import logging
 
 logger = get_inductor_logger("spyre_kernel")
@@ -205,6 +205,23 @@ class SpyreOpFuncs:
         return PointwiseOp("lesserthan", [a, b])
 
     @staticmethod
+    def moe_expert_gather(experts, input, top_k_indices, gate_scores, expert_size):
+        op_info = {
+            "indirect_args": {
+                0: {
+                    "index_arg_index": 2,
+                    "gather_dim": 0,
+                    "expert_size": expert_size,
+                }
+            }
+        }
+        return PointwiseOp(
+            "moe_expert_gather",
+            [experts, input, top_k_indices, gate_scores],
+            op_info,
+        )
+
+    @staticmethod
     def mul(a, b):
         return PointwiseOp("mul", [a, b])
 
@@ -345,6 +362,26 @@ class SpyreKernelOpsHandler(DefaultHandler):
         values: tuple[RValue, ...],
     ) -> tuple[RValue, ...]:
         raise NotImplementedError
+
+
+def _apply_indirect_sources(
+    args: list[TensorArg], indirect_args: dict[int, dict]
+) -> None:
+    """Attach IndirectSource to TensorArgs based on op_info metadata.
+
+    ``indirect_args`` maps input-arg position (0-based, among inputs only)
+    to a dict with ``index_arg_index``, ``gather_dim``, and ``expert_size``.
+    """
+    for arg_pos, info in indirect_args.items():
+        idx_arg = info["index_arg_index"]
+        gather_dim = info["gather_dim"]
+        expert_size = info["expert_size"]
+        index_value = sympy.Symbol("index_value")
+        args[arg_pos].indirect_source = IndirectSource(
+            index_arg_index=idx_arg,
+            gather_dim=gather_dim,
+            base_offset_expr=index_value * expert_size,
+        )
 
 
 class SpyreKernel(Kernel[CSEVariable]):
@@ -497,6 +534,12 @@ class SpyreKernel(Kernel[CSEVariable]):
                     raise Unsupported(f"unexpected argument {input} to {value.op}")
             args.append(self.create_tensor_arg(False, real_dst_name, dst))
             op_info.update(value.op_info)
+            if value.op == "overwrite":
+                convert_overwrite(
+                    value.op_info["overwrite_infos"], dst.layout.device_layout
+                )
+            if "indirect_args" in op_info:
+                _apply_indirect_sources(args, op_info.pop("indirect_args"))
             self.op_specs.append(self.create_op_spec(value.op, False, args, op_info))
         elif isinstance(value, TensorAccess):
             # Reshapes, transposes, and other dataops
@@ -646,6 +689,14 @@ class SpyreKernel(Kernel[CSEVariable]):
                                         + "],"
                                     )
                                     buf.writeline(f"allocation={arg.allocation!r},")
+                                    if arg.indirect_source is not None:
+                                        isrc = arg.indirect_source
+                                        buf.writeline(
+                                            f"indirect_source=IndirectSource("
+                                            f"index_arg_index={isrc.index_arg_index}, "
+                                            f"gather_dim={isrc.gather_dim}, "
+                                            f"base_offset_expr={sympy_str(isrc.base_offset_expr)}),"
+                                        )
                                 buf.writeline("),")
                         buf.writeline("]")
                     buf.writeline("),")

@@ -255,3 +255,27 @@ def restickify(  # type: ignore[empty-body]
     x: torch.Tensor,
 ) -> torch.Tensor:
     pass
+
+
+@torch.library.custom_op(
+    "spyre::moe_expert_gather", mutates_args=(), device_types="spyre"
+)
+def moe_expert_gather(  # type: ignore[empty-body]
+    experts: torch.Tensor,
+    input: torch.Tensor,
+    top_k_indices: torch.Tensor,
+    gate_scores: torch.Tensor,
+) -> torch.Tensor:
+    pass
+
+
+@moe_expert_gather.register_fake
+def _(
+    experts: torch.Tensor,
+    input: torch.Tensor,
+    top_k_indices: torch.Tensor,
+    gate_scores: torch.Tensor,
+) -> torch.Tensor:
+    batch = input.size(0)
+    hidden = experts.size(-1)
+    return input.new_empty((batch, hidden))
