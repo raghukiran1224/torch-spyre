@@ -400,7 +400,6 @@ class TestMoECompilationPipeline(unittest.TestCase):
         code_str = code[0]
         self.assertIn("IndirectSource", code_str)
 
-    @unittest.expectedFailure
     @unittest.skipUnless(torch.spyre.is_available(), "requires spyre")
     def test_simple_moe_module(self):
         """Compile a real nn.Module that uses index_select for expert gather.
