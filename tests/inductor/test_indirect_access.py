@@ -209,67 +209,58 @@ class TestParseOpSpecIndirect(unittest.TestCase):
 
 
 class TestGenerateSDSCIndirect(unittest.TestCase):
-    """Tests that generate_sdsc emits the indirect_src JSON fields."""
+    """Tests that generate_sdsc emits deeptools-compatible indirect access fields."""
 
-    def test_json_contains_indirect_src_on_schedule_tree(self):
-        op_spec = _make_moe_op_spec()
-        sdsc_json = compile_op_spec("test_moe_gather", op_spec)
-
-        json_str = json.dumps(sdsc_json)
-        self.assertIn("indirectSrc_", json_str)
-
+    def _get_schedule_tree(self, sdsc_json):
         opfunc_key = list(sdsc_json.keys())[0]
         dsc = sdsc_json[opfunc_key]["dscs_"][0]
         inner_key = list(dsc.keys())[0]
-        schedule_tree = dsc[inner_key]["scheduleTree_"]
+        return dsc[inner_key]["scheduleTree_"]
 
-        found_indirect = False
-        for node in schedule_tree:
-            if "indirectSrc_" in node:
-                found_indirect = True
-                isrc = node["indirectSrc_"]
-                self.assertEqual(isrc["indexTensorIdx_"], 1)
-                self.assertIn("index_value", isrc["baseOffsetExpr_"])
-                self.assertIn("32768", isrc["baseOffsetExpr_"])
-                self.assertEqual(isrc["addressMode_"], "ibr")
-                break
-        self.assertTrue(found_indirect, "No indirectSrc_ found in scheduleTree_")
-
-    def test_json_contains_indirect_access_on_labeled_ds(self):
+    def test_value_tensor_has_indirect_alloc_type(self):
         op_spec = _make_moe_op_spec()
         sdsc_json = compile_op_spec("test_moe_gather", op_spec)
+        schedule_tree = self._get_schedule_tree(sdsc_json)
 
-        opfunc_key = list(sdsc_json.keys())[0]
-        dsc = sdsc_json[opfunc_key]["dscs_"][0]
-        inner_key = list(dsc.keys())[0]
-        labeled_ds = dsc[inner_key]["labeledDs_"]
+        experts_node = schedule_tree[0]
+        self.assertEqual(experts_node["ldsIdx_"], 0)
+        self.assertEqual(experts_node["indirectAllocType_"], "value_tensor")
+        self.assertIn("relatedIndirectAccessAlloc_", experts_node)
 
-        found_indirect = False
-        for lds in labeled_ds:
-            if "indirectAccess_" in lds:
-                found_indirect = True
-                self.assertEqual(lds["indirectAccess_"]["indexTensorIdx_"], 1)
-                self.assertEqual(lds["indirectAccess_"]["addressMode_"], "ibr")
-                break
-        self.assertTrue(found_indirect, "No indirectAccess_ found in labeledDs_")
-
-    def test_non_indirect_nodes_have_no_indirect_fields(self):
+    def test_index_tensor_has_indirect_alloc_type(self):
         op_spec = _make_moe_op_spec()
         sdsc_json = compile_op_spec("test_moe_gather", op_spec)
+        schedule_tree = self._get_schedule_tree(sdsc_json)
 
-        opfunc_key = list(sdsc_json.keys())[0]
-        dsc = sdsc_json[opfunc_key]["dscs_"][0]
-        inner_key = list(dsc.keys())[0]
-        schedule_tree = dsc[inner_key]["scheduleTree_"]
+        indices_node = schedule_tree[1]
+        self.assertEqual(indices_node["ldsIdx_"], 1)
+        self.assertEqual(indices_node["indirectAllocType_"], "index_tensor")
+        self.assertIn("relatedIndirectAccessAlloc_", indices_node)
 
-        for node in schedule_tree:
-            if node["ldsIdx_"] != 0:
-                self.assertNotIn(
-                    "indirectSrc_",
-                    node,
-                    f"Non-indirect node ldsIdx_={node['ldsIdx_']}"
-                    " should not have indirectSrc_",
-                )
+    def test_related_alloc_cross_references(self):
+        op_spec = _make_moe_op_spec()
+        sdsc_json = compile_op_spec("test_moe_gather", op_spec)
+        schedule_tree = self._get_schedule_tree(sdsc_json)
+
+        experts_node = schedule_tree[0]
+        indices_node = schedule_tree[1]
+        self.assertEqual(
+            experts_node["relatedIndirectAccessAlloc_"],
+            indices_node["name_"],
+        )
+        self.assertEqual(
+            indices_node["relatedIndirectAccessAlloc_"],
+            experts_node["name_"],
+        )
+
+    def test_output_tensor_has_no_indirection(self):
+        op_spec = _make_moe_op_spec()
+        sdsc_json = compile_op_spec("test_moe_gather", op_spec)
+        schedule_tree = self._get_schedule_tree(sdsc_json)
+
+        output_node = schedule_tree[2]
+        self.assertEqual(output_node["indirectAllocType_"], "no_indirection")
+        self.assertNotIn("relatedIndirectAccessAlloc_", output_node)
 
     def test_json_is_valid_and_serializable(self):
         op_spec = _make_moe_op_spec()
@@ -320,8 +311,9 @@ class TestGenerateSDSCIndirect(unittest.TestCase):
 
         sdsc_json = compile_op_spec("test_standard", op_spec)
         json_str = json.dumps(sdsc_json)
-        self.assertNotIn("indirectSrc_", json_str)
-        self.assertNotIn("indirectAccess_", json_str)
+        self.assertNotIn("value_tensor", json_str)
+        self.assertNotIn("index_tensor", json_str)
+        self.assertNotIn("relatedIndirectAccessAlloc_", json_str)
 
 
 if __name__ == "__main__":

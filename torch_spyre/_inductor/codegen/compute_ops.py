@@ -205,8 +205,42 @@ def gen_coord_info_value(
     )
 
 
+def _alloc_node_name(idx, tensor, sdsc_spec=None):
+    return f"allocate-Tensor{idx}_{'hbm' if not tensor.allocation else 'lx'}"
+
+
+def _build_indirect_alloc_map(sdsc_spec):
+    """Build per-tensor indirect allocation metadata for deeptools.
+
+    Returns a dict mapping tensor index to (alloc_type, related_name) where:
+      - "value_tensor": this tensor is indirectly addressed (the data tensor)
+      - "index_tensor": this tensor supplies indices for another tensor
+      - "no_indirection": standard direct access
+    """
+    result = {}
+    index_tensor_to_value = {}
+
+    for i, tensor in enumerate(sdsc_spec.args):
+        if tensor.indirect_src is not None:
+            idx_tensor_idx = tensor.indirect_src.index_tensor_idx
+            result[i] = (
+                "value_tensor",
+                _alloc_node_name(idx_tensor_idx, sdsc_spec.args[idx_tensor_idx]),
+            )
+            index_tensor_to_value[idx_tensor_idx] = i
+
+    for idx_idx, val_idx in index_tensor_to_value.items():
+        result[idx_idx] = (
+            "index_tensor",
+            _alloc_node_name(val_idx, sdsc_spec.args[val_idx]),
+        )
+
+    return result
+
+
 def generate_sdsc(sdsc_spec):
     out_idx = len(sdsc_spec.args) - 1
+    indirect_alloc_map = _build_indirect_alloc_map(sdsc_spec)
     core_id_to_wk_slice = {
         str(c): {
             str(dim): int(expr.subs({Symbol("core_id"): c}))
@@ -341,15 +375,16 @@ def generate_sdsc(sdsc_spec):
                                     if tensor.backGap
                                     else {}
                                 ),
+                                "indirectAllocType_": (
+                                    indirect_alloc_map[i][0]
+                                    if i in indirect_alloc_map
+                                    else "no_indirection"
+                                ),
                                 **(
                                     {
-                                        "indirectSrc_": {
-                                            "indexTensorIdx_": tensor.indirect_src.index_tensor_idx,
-                                            "baseOffsetExpr_": tensor.indirect_src.base_offset_expr,
-                                            "addressMode_": tensor.indirect_src.address_mode,
-                                        }
+                                        "relatedIndirectAccessAlloc_": indirect_alloc_map[i][1],
                                     }
-                                    if tensor.indirect_src is not None
+                                    if i in indirect_alloc_map
                                     else {}
                                 ),
                                 "coordinates_": {
@@ -400,16 +435,6 @@ def generate_sdsc(sdsc_spec):
                                 }
                                 if not tensor.allocation
                                 else {"lx": {"isPresent": 1}},
-                                **(
-                                    {
-                                        "indirectAccess_": {
-                                            "indexTensorIdx_": tensor.indirect_src.index_tensor_idx,
-                                            "addressMode_": tensor.indirect_src.address_mode,
-                                        }
-                                    }
-                                    if tensor.indirect_src is not None
-                                    else {}
-                                ),
                             }
                             for i, tensor in enumerate(sdsc_spec.args)
                         ],
