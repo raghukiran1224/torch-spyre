@@ -79,12 +79,12 @@ def _make_moe_op_spec():
     indices_arg = TensorArg(
         is_input=True,
         arg_index=1,
-        device_dtype=DataFormats.SEN169_FP16,
-        device_size=[1, 1, 64],
+        device_dtype=DataFormats.IEEE_INT32,
+        device_size=[1, 1, 32],
         device_coordinates=[
             sympy.Integer(0),
             sympy.Integer(0),
-            sympy.Mod(k_sym, 64),
+            sympy.Mod(k_sym, 32),
         ],
         allocation=None,
     )
