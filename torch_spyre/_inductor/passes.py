@@ -30,6 +30,7 @@ from torch._inductor.scheduler import BaseSchedulerNode
 from .logging_utils import get_inductor_logger
 
 from .padding import insert_padding
+from .moe_pass import moe_gather_pass
 from .temp_passes import (
     bmm_unflatten_pass,
     mm_to_bmm_pass,
@@ -131,6 +132,7 @@ class CustomPostPasses(CustomGraphPass):
         replace_scalar_with_tensor,
         mm_to_bmm_pass.apply,
         bmm_unflatten_pass.apply,
+        moe_gather_pass.apply,
     ]
 
     def __call__(self, graph: torch.fx.graph.Graph) -> None:
