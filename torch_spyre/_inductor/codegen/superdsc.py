@@ -378,17 +378,36 @@ def _create_sdsc_tensors(
             )
         )
 
-    # For index tensors in indirect access patterns, set all maxDimSizes to
-    # bounded values so the scheduler's getPagedDimensions() recognizes the
-    # paged dimensions.
+    # For index tensors in indirect access patterns:
+    # 1. Set bounded maxDimSizes so getPagedDimensions() recognizes paged dims
+    # 2. Assign a separate layout with the gather dimension as stick dim
     for arg in op_spec.args:
         if arg.indirect_source is not None:
             idx_arg_pos = arg.indirect_source.index_arg_index
             idx_sdsc = sdsc_args[idx_arg_pos]
             idx_layout = layouts[idx_sdsc.layout]
+
             for dim in idx_layout["dim_order"]:
                 if dim in idx_sdsc.max_dim_sizes:
                     idx_sdsc.max_dim_sizes[dim] = iteration_space.get(dim, 1)
+
+            gather_dim_sym = list(iteration_space.keys())[
+                arg.indirect_source.gather_dim
+            ]
+            gather_dim_mapped = symbol_mapping.get(gather_dim_sym, gather_dim_sym)
+            current_dim_order = idx_layout["dim_order"]
+            if idx_layout["stick_dim_order"] != gather_dim_mapped:
+                new_dim_order = [
+                    d for d in current_dim_order if d != gather_dim_mapped
+                ] + [gather_dim_mapped]
+                idx_label = _get_layout_label(
+                    layouts,
+                    new_dim_order,
+                    gather_dim_mapped,
+                    op_spec.args[idx_arg_pos].device_dtype.elems_per_stick(),
+                    LAYOUT_LABELS,
+                )
+                idx_sdsc.layout = idx_label
 
     # For each overwrite entry with a device dimension of size 1 (absent from
     # the iteration space), inject a synthetic dimension.
