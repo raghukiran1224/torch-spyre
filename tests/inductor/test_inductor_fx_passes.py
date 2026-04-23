@@ -246,17 +246,18 @@ class TestInsertPadding(unittest.TestCase):
 
 
 def _make_index_select_graph(
-    experts_shape, indices_shape, dim=0, dtype=torch.float16
+    experts_shape, indices_shape, dim=0, dtype=torch.float16,
+    device="spyre",
 ):
-    """Build an FX graph with aten.index_select on dim 0."""
+    """Build an FX GraphModule with aten.index_select."""
     graph = torch.fx.Graph()
     experts = graph.placeholder("experts")
     experts.meta["val"] = torch.empty(
-        experts_shape, dtype=dtype, device="spyre"
+        experts_shape, dtype=dtype, device=device
     )
     indices = graph.placeholder("indices")
     indices.meta["val"] = torch.empty(
-        indices_shape, dtype=torch.int64, device="spyre"
+        indices_shape, dtype=torch.int64, device=device
     )
     sel = graph.call_function(
         torch.ops.aten.index_select.default,
@@ -265,10 +266,11 @@ def _make_index_select_graph(
     out_shape = list(experts_shape)
     out_shape[dim] = indices_shape[0]
     sel.meta["val"] = torch.empty(
-        out_shape, dtype=dtype, device="spyre"
+        out_shape, dtype=dtype, device=device
     )
     graph.output(sel)
-    return graph
+    gm = torch.fx.GraphModule({}, graph)
+    return gm
 
 
 class TestMoEGatherPass(unittest.TestCase):
@@ -277,11 +279,13 @@ class TestMoEGatherPass(unittest.TestCase):
     def test_index_select_dim0_rewritten(self):
         from torch_spyre._inductor.moe_pass import moe_gather_pass
 
-        graph = _make_index_select_graph(
+        gm = _make_index_select_graph(
             experts_shape=(8, 128), indices_shape=(4,)
         )
-        moe_gather_pass.apply(graph)
-        targets = [n.target for n in graph.nodes if n.op == "call_function"]
+        moe_gather_pass.apply(gm)
+        targets = [
+            n.target for n in gm.graph.nodes if n.op == "call_function"
+        ]
         self.assertIn(
             torch.ops.spyre.moe_expert_gather.default, targets
         )
@@ -292,11 +296,13 @@ class TestMoEGatherPass(unittest.TestCase):
     def test_index_select_dim1_not_rewritten(self):
         from torch_spyre._inductor.moe_pass import moe_gather_pass
 
-        graph = _make_index_select_graph(
+        gm = _make_index_select_graph(
             experts_shape=(8, 128), indices_shape=(4,), dim=1
         )
-        moe_gather_pass.apply(graph)
-        targets = [n.target for n in graph.nodes if n.op == "call_function"]
+        moe_gather_pass.apply(gm)
+        targets = [
+            n.target for n in gm.graph.nodes if n.op == "call_function"
+        ]
         self.assertNotIn(
             torch.ops.spyre.moe_expert_gather.default, targets
         )
@@ -307,20 +313,15 @@ class TestMoEGatherPass(unittest.TestCase):
     def test_cpu_tensors_not_rewritten(self):
         from torch_spyre._inductor.moe_pass import moe_gather_pass
 
-        graph = torch.fx.Graph()
-        experts = graph.placeholder("experts")
-        experts.meta["val"] = torch.empty(8, 128, dtype=torch.float16)
-        indices = graph.placeholder("indices")
-        indices.meta["val"] = torch.empty(4, dtype=torch.int64)
-        sel = graph.call_function(
-            torch.ops.aten.index_select.default,
-            args=(experts, 0, indices),
+        gm = _make_index_select_graph(
+            experts_shape=(8, 128),
+            indices_shape=(4,),
+            device="cpu",
         )
-        sel.meta["val"] = torch.empty(4, 128, dtype=torch.float16)
-        graph.output(sel)
-
-        moe_gather_pass.apply(graph)
-        targets = [n.target for n in graph.nodes if n.op == "call_function"]
+        moe_gather_pass.apply(gm)
+        targets = [
+            n.target for n in gm.graph.nodes if n.op == "call_function"
+        ]
         self.assertNotIn(
             torch.ops.spyre.moe_expert_gather.default, targets
         )
