@@ -408,6 +408,17 @@ def _create_sdsc_tensors(
                     LAYOUT_LABELS,
                 )
                 idx_sdsc.layout = idx_label
+                idx_sdsc.scales = {d: idx_sdsc.scales[d] for d in new_dim_order}
+                idx_sdsc.strides = {d: idx_sdsc.strides[d] for d in new_dim_order}
+                idx_sdsc.offsets = {d: idx_sdsc.offsets[d] for d in new_dim_order}
+                idx_sdsc.max_dim_sizes = {
+                    d: idx_sdsc.max_dim_sizes[d] for d in new_dim_order
+                }
+                for dim in new_dim_order:
+                    if dim == gather_dim_mapped:
+                        idx_sdsc.scales[dim] = 1
+                    else:
+                        idx_sdsc.scales[dim] = -1
 
     # For each overwrite entry with a device dimension of size 1 (absent from
     # the iteration space), inject a synthetic dimension.
