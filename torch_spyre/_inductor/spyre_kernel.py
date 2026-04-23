@@ -215,7 +215,7 @@ class SpyreOpFuncs:
             }
         }
         return PointwiseOp(
-            "moe_expert_gather",
+            "identity",
             [experts, input, top_k_indices, gate_scores],
             op_info,
         )
