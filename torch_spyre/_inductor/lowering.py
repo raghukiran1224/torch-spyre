@@ -588,25 +588,23 @@ def lower_moe_expert_gather(experts, input, top_k_indices, gate_scores):
     fn = lowering.ops_wrapper(torch.ops.spyre.moe_expert_gather.__name__)
 
     experts.realize()
-    input.realize()
     top_k_indices.realize()
-    gate_scores.realize()
+
+    output_size = input.get_size()
 
     def inner_fn(index):
         return fn(
             experts.make_loader()(index),
-            input.make_loader()(index),
             top_k_indices.make_loader()(index),
-            gate_scores.make_loader()(index),
         )
 
     pw = Pointwise.create(
-        device=input.get_device(),
-        dtype=input.get_dtype(),
+        device=experts.get_device(),
+        dtype=experts.get_dtype(),
         inner_fn=inner_fn,
-        ranges=input.get_size(),
-        origin_node=input.get_origin_node(),
-        traceback=input.get_traceback(),
+        ranges=output_size,
+        origin_node=experts.get_origin_node(),
+        traceback=experts.get_traceback(),
     )
     pw.realize()
     return pw

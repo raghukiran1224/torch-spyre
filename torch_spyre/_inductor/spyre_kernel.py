@@ -205,18 +205,18 @@ class SpyreOpFuncs:
         return PointwiseOp("lesserthan", [a, b])
 
     @staticmethod
-    def moe_expert_gather(experts, input, top_k_indices, gate_scores):
+    def moe_expert_gather(experts, top_k_indices):
         op_info = {
             "indirect_args": {
                 0: {
-                    "index_arg_index": 2,
+                    "index_arg_index": 1,
                     "gather_dim": 0,
                 }
             }
         }
         return PointwiseOp(
             "identity",
-            [experts, input, top_k_indices, gate_scores],
+            [experts, top_k_indices],
             op_info,
         )
 
