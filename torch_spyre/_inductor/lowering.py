@@ -603,7 +603,7 @@ def lower_moe_expert_gather(experts, input, top_k_indices, gate_scores):
         dtype=experts.get_dtype(),
         inner_fn=inner_fn,
         ranges=output_size,
-        origin_node=experts.get_origin_node(),
+        origin_node=V.get_current_node(),
         traceback=experts.get_traceback(),
     )
     pw.realize()
