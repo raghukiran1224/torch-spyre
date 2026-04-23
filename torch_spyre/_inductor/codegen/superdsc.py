@@ -360,6 +360,8 @@ def _create_sdsc_tensors(
                 base_offset_expr=str(arg.indirect_source.base_offset_expr),
                 address_mode="ibr",
             )
+            gather_dim_sym = dim_order[arg.indirect_source.gather_dim]
+            max_dim_sizes[gather_dim_sym] = 1
 
         sdsc_args.append(
             SDSCArgs(
@@ -375,6 +377,40 @@ def _create_sdsc_tensors(
                 indirect_src=indirect_src,
             )
         )
+
+    # For index tensors in indirect access patterns, set all maxDimSizes to
+    # bounded values so the scheduler's getPagedDimensions() recognizes the
+    # paged dimensions.
+    for arg in op_spec.args:
+        if arg.indirect_source is not None:
+            idx_arg_pos = arg.indirect_source.index_arg_index
+            idx_sdsc = sdsc_args[idx_arg_pos]
+            idx_layout = layouts[idx_sdsc.layout]
+            for dim in idx_layout["dim_order"]:
+                if dim in idx_sdsc.max_dim_sizes:
+                    idx_sdsc.max_dim_sizes[dim] = iteration_space.get(dim, 1)
+
+    # For each overwrite entry with a device dimension of size 1 (absent from
+    # the iteration space), inject a synthetic dimension.
+    for info in overwrite_infos.values():
+        missing_dim = Symbol(INPUT_DIM_LABELS[len(op_dim_order)])
+        iteration_space[missing_dim] = 1
+        for sdsc_arg, src_arg in zip(sdsc_args, op_spec.args):
+            dim_idx = len(sdsc_arg.scales)
+            sdsc_arg.scales[missing_dim] = 1
+            sdsc_arg.max_dim_sizes[missing_dim] = -1
+            sdsc_arg.strides[missing_dim] = _calculate_device_stride(
+                dim_idx, src_arg.device_size
+            )
+            if not src_arg.is_input:
+                sdsc_arg.backGap[missing_dim] = info["gap"]
+                sdsc_arg.offsets[missing_dim] = (
+                    info["device_offset"] * info["device_stride"]
+                )
+            if missing_dim not in layouts[sdsc_arg.layout]["dim_order"]:
+                layouts[sdsc_arg.layout]["dim_order"] = layouts[sdsc_arg.layout][
+                    "dim_order"
+                ] + [missing_dim]
 
     return sdsc_args, layouts, missing_dim
 
