@@ -352,7 +352,7 @@ class TestMoECompilationPipeline(unittest.TestCase):
                 experts, input_tensor, top_k_indices, gate_scores
             )
 
-        compiled_fn = torch.compile(fn, backend="spyre")
+        compiled_fn = torch.compile(fn)
         result = compiled_fn(
             experts, input_tensor, top_k_indices, gate_scores
         )
@@ -387,7 +387,7 @@ class TestMoECompilationPipeline(unittest.TestCase):
                 experts, input_tensor, top_k_indices, gate_scores
             )
 
-        compiled_fn = torch.compile(fn, backend="spyre")
+        compiled_fn = torch.compile(fn)
         _, code = run_and_get_code(
             compiled_fn,
             experts,
