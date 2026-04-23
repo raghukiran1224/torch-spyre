@@ -23,6 +23,8 @@ import json
 import unittest
 
 import sympy
+import torch
+import torch_spyre  # noqa: F401
 
 from torch_spyre._C import DataFormats
 from torch_spyre._inductor.op_spec import (
@@ -316,6 +318,87 @@ class TestGenerateSDSCIndirect(unittest.TestCase):
         self.assertNotIn("value_tensor", json_str)
         self.assertNotIn("index_tensor", json_str)
         self.assertNotIn("relatedIndirectAccessAlloc_", json_str)
+
+
+class TestMoECompilationPipeline(unittest.TestCase):
+    """Compilation pipeline tests for the spyre::moe_expert_gather custom op.
+
+    These tests exercise the full torch.compile -> execute path and require
+    Spyre hardware unless noted otherwise.
+    """
+
+    @unittest.skipUnless(torch.spyre.is_available(), "requires spyre")
+    def test_moe_expert_gather_compile_and_run(self):
+        """Compile moe_expert_gather with sendnn and run on Spyre hardware."""
+        num_experts = 8
+        hidden = 128
+        top_k = 4
+
+        experts = torch.randn(
+            num_experts, hidden, dtype=torch.float16
+        ).to("spyre")
+        input_tensor = torch.randn(
+            top_k, hidden, dtype=torch.float16
+        ).to("spyre")
+        top_k_indices = torch.zeros(
+            top_k, 1, dtype=torch.float16
+        ).to("spyre").expand(top_k, hidden)
+        gate_scores = torch.ones(
+            top_k, hidden, dtype=torch.float16
+        ).to("spyre")
+
+        def fn(experts, input_tensor, top_k_indices, gate_scores):
+            return torch.ops.spyre.moe_expert_gather(
+                experts, input_tensor, top_k_indices, gate_scores
+            )
+
+        compiled_fn = torch.compile(fn, backend="sendnn")
+        result = compiled_fn(
+            experts, input_tensor, top_k_indices, gate_scores
+        )
+
+        self.assertEqual(result.shape, torch.Size([top_k, hidden]))
+        self.assertEqual(result.device.type, "spyre")
+
+    @unittest.skipUnless(torch.spyre.is_available(), "requires spyre")
+    def test_moe_expert_gather_generates_indirect_source(self):
+        """Verify that compilation produces code with IndirectSource."""
+        from torch._inductor.utils import run_and_get_code
+
+        num_experts = 8
+        hidden = 128
+        top_k = 4
+
+        experts = torch.randn(
+            num_experts, hidden, dtype=torch.float16
+        ).to("spyre")
+        input_tensor = torch.randn(
+            top_k, hidden, dtype=torch.float16
+        ).to("spyre")
+        top_k_indices = torch.zeros(
+            top_k, 1, dtype=torch.float16
+        ).to("spyre").expand(top_k, hidden)
+        gate_scores = torch.ones(
+            top_k, hidden, dtype=torch.float16
+        ).to("spyre")
+
+        def fn(experts, input_tensor, top_k_indices, gate_scores):
+            return torch.ops.spyre.moe_expert_gather(
+                experts, input_tensor, top_k_indices, gate_scores
+            )
+
+        compiled_fn = torch.compile(fn, backend="sendnn")
+        _, code = run_and_get_code(
+            compiled_fn,
+            experts,
+            input_tensor,
+            top_k_indices,
+            gate_scores,
+        )
+
+        self.assertGreater(len(code), 0, "Expected generated code")
+        code_str = code[0]
+        self.assertIn("IndirectSource", code_str)
 
 
 if __name__ == "__main__":
