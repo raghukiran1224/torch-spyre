@@ -45,12 +45,14 @@ def _make_moe_op_spec():
                           device_size = [hidden_sticks=2, num_experts=8, 64]
                           INDIRECT on dim 0 (expert selection via indices)
         arg 1 (input):   indices — logically [top_k=4]
-                          device_size = [1, top_k=4, 64]
+                          device_size = [1, 64]
+                          stick dim = mb (the selection dimension)
         arg 2 (output):  result  — logically [top_k=4, hidden=128]
                           device_size = [hidden_sticks=2, top_k=4, 64]
 
     device_coordinates follow the convention:
         [floor(h/64), k, Mod(h, 64)] — last coord is within-stick position.
+    Index tensor uses k (mb) as stick dim: [Mod(k, 64)].
     """
     k_sym = sympy.Symbol("c0")
     h_sym = sympy.Symbol("c1")
@@ -78,11 +80,9 @@ def _make_moe_op_spec():
         is_input=True,
         arg_index=1,
         device_dtype=DataFormats.SEN169_FP16,
-        device_size=[1, 4, 64],
+        device_size=[1, 64],
         device_coordinates=[
-            sympy.Integer(0),
-            k_sym,
-            sympy.Integer(0),
+            sympy.Mod(k_sym, 64),
         ],
         allocation=None,
     )
