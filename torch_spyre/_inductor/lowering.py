@@ -589,6 +589,18 @@ def lower_moe_expert_gather(experts, input, top_k_indices, gate_scores):
 
     experts.realize()
     input.realize()
+
+    # Broadcast 1D tensors to 2D so all tensors in the kernel share the
+    # same iteration space dimensions.  The stickify pass requires
+    # consistent stick expressions across all tensors.
+    hidden = input.get_size()[-1]
+    top_k_indices = lowering.expand(
+        lowering.unsqueeze(top_k_indices, -1), [-1, hidden]
+    )
+    gate_scores = lowering.expand(
+        lowering.unsqueeze(gate_scores, -1), [-1, hidden]
+    )
+
     top_k_indices.realize()
     gate_scores.realize()
 
@@ -598,8 +610,8 @@ def lower_moe_expert_gather(experts, input, top_k_indices, gate_scores):
         return fn(
             experts.make_loader()(index),
             input.make_loader()(index),
-            top_k_indices.make_loader()(index[:1]),
-            gate_scores.make_loader()(index[:1]),
+            top_k_indices.make_loader()(index),
+            gate_scores.make_loader()(index),
             expert_size,
         )
 
