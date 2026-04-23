@@ -205,13 +205,12 @@ class SpyreOpFuncs:
         return PointwiseOp("lesserthan", [a, b])
 
     @staticmethod
-    def moe_expert_gather(experts, input, top_k_indices, gate_scores, expert_size):
+    def moe_expert_gather(experts, input, top_k_indices, gate_scores):
         op_info = {
             "indirect_args": {
                 0: {
                     "index_arg_index": 2,
                     "gather_dim": 0,
-                    "expert_size": expert_size,
                 }
             }
         }
@@ -370,17 +369,24 @@ def _apply_indirect_sources(
     """Attach IndirectSource to TensorArgs based on op_info metadata.
 
     ``indirect_args`` maps input-arg position (0-based, among inputs only)
-    to a dict with ``index_arg_index``, ``gather_dim``, and ``expert_size``.
+    to a dict with ``index_arg_index`` and ``gather_dim``.  The byte offset
+    per index value is derived from the tensor's device layout.
     """
     for arg_pos, info in indirect_args.items():
         idx_arg = info["index_arg_index"]
         gather_dim = info["gather_dim"]
-        expert_size = info["expert_size"]
+        device_size = args[arg_pos].device_size
+        bytes_per_elem = 2
+        page_size = 1
+        for d in range(len(device_size) - 1):
+            if d != gather_dim:
+                page_size *= device_size[d]
+        page_size *= device_size[-1] * bytes_per_elem
         index_value = sympy.Symbol("index_value")
         args[arg_pos].indirect_source = IndirectSource(
             index_arg_index=idx_arg,
             gather_dim=gather_dim,
-            base_offset_expr=index_value * expert_size,
+            base_offset_expr=index_value * page_size,
         )
 
 

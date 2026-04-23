@@ -592,15 +592,12 @@ def lower_moe_expert_gather(experts, input, top_k_indices, gate_scores):
     top_k_indices.realize()
     gate_scores.realize()
 
-    expert_size = experts.get_size()[-1]
-
     def inner_fn(index):
         return fn(
             experts.make_loader()(index),
             input.make_loader()(index),
             top_k_indices.make_loader()(index),
             gate_scores.make_loader()(index),
-            expert_size,
         )
 
     pw = Pointwise.create(
