@@ -430,7 +430,7 @@ class TestMoECompilationPipeline(unittest.TestCase):
 
         model = SimpleMoEGather(num_experts, hidden).to("spyre")
         indices = torch.tensor(
-            [0, 2, 1, 3], dtype=torch.float16
+            [0, 2, 1, 3], dtype=torch.int64
         ).to("spyre")
 
         compiled_model = torch.compile(model)
