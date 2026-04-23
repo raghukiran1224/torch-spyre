@@ -420,6 +420,8 @@ def _create_sdsc_tensors(
                     else:
                         idx_sdsc.scales[dim] = -1
 
+            idx_sdsc.data_format = DataFormats.IEEE_INT32
+
     # For each overwrite entry with a device dimension of size 1 (absent from
     # the iteration space), inject a synthetic dimension.
     for info in overwrite_infos.values():
