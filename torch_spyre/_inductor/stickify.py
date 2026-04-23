@@ -319,7 +319,10 @@ def pointwise_layout(
         return FixedTiledLayout(
             output.device, output.dtype, output.size, output.stride, stl
         )
-    elif aten_op == spyreop.moe_expert_gather.default:
+    elif any(
+        getattr(o, "target", None) == spyreop.moe_expert_gather.default
+        for o in data.origins
+    ):
         # MoE expert gather: the experts tensor (arg 0) and output define the
         # layout.  The index and gate tensors are broadcast auxiliaries whose
         # stick dimension differs — exclude them from the stick compatibility
