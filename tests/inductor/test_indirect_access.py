@@ -400,6 +400,45 @@ class TestMoECompilationPipeline(unittest.TestCase):
         code_str = code[0]
         self.assertIn("IndirectSource", code_str)
 
+    @unittest.skipUnless(torch.spyre.is_available(), "requires spyre")
+    def test_simple_moe_module(self):
+        """Compile a real nn.Module that uses index_select for expert gather.
+
+        This exercises the full user-facing path:
+        1. User writes standard PyTorch: torch.index_select(experts, 0, indices)
+        2. FX pass rewrites to spyre::moe_expert_gather
+        3. Lowering creates OpSpec with IndirectSource
+        4. SDSC JSON with indirectAllocType_ is generated
+        5. Deeptools compiles with IBR transfers
+        6. Executes on Spyre hardware
+        """
+
+        class SimpleMoEGather(torch.nn.Module):
+            def __init__(self, num_experts, hidden_dim):
+                super().__init__()
+                self.experts = torch.nn.Parameter(
+                    torch.randn(
+                        num_experts, hidden_dim, dtype=torch.float16
+                    )
+                )
+
+            def forward(self, indices):
+                return torch.index_select(self.experts, 0, indices)
+
+        num_experts = 8
+        hidden = 128
+
+        model = SimpleMoEGather(num_experts, hidden).to("spyre")
+        indices = torch.tensor(
+            [0, 2, 1, 3], dtype=torch.float16
+        ).to("spyre")
+
+        compiled_model = torch.compile(model)
+        result = compiled_model(indices)
+
+        self.assertEqual(result.shape, torch.Size([4, hidden]))
+        self.assertEqual(result.device.type, "spyre")
+
 
 if __name__ == "__main__":
     unittest.main()
