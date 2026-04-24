@@ -673,6 +673,31 @@ class TestOps(unittest.TestCase, metaclass=ParameterizedTestMeta):
                 ),
             }
         },
+        ("test_view_transpose_heads", "test_view_transpose_heads_cpu"): {
+            "param_sets": {
+                "seq1_q": (
+                    1,
+                    1,
+                    16,
+                    128,
+                    cached_randn((1, 1, 2048)),
+                ),
+                "seq64_q": (
+                    1,
+                    64,
+                    16,
+                    128,
+                    cached_randn((1, 64, 2048)),
+                ),
+                "seq64_k": (
+                    1,
+                    64,
+                    8,
+                    128,
+                    cached_randn((1, 64, 1024)),
+                ),
+            }
+        },
         ("test_cmp", "test_binary_op_cpu"): {
             "ops_dict": {
                 "eq": torch.eq,
@@ -2029,6 +2054,13 @@ class TestOps(unittest.TestCase, metaclass=ParameterizedTestMeta):
         # Note: .contiguous() causes issues with eager mode, see https://github.com/torch-spyre/torch-spyre/issues/1149
         compare_with_cpu(
             lambda x: torch.transpose(x, dim0, dim1).contiguous(), x, run_eager=False
+        )
+
+    def test_view_transpose_heads_cpu(self, B: int, S: int, H: int, D: int, x):
+        compare_with_cpu(
+            lambda x: x.view(B, S, H, D).transpose(1, 2),
+            x,
+            run_eager=False,
         )
 
     def test_where_cpu(self, cond_op, x, y):
