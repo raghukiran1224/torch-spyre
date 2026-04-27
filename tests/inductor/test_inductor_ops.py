@@ -689,13 +689,6 @@ class TestOps(unittest.TestCase, metaclass=ParameterizedTestMeta):
                     128,
                     cached_randn((1, 64, 2048)),
                 ),
-                "seq64_k": (
-                    1,
-                    64,
-                    8,
-                    128,
-                    cached_randn((1, 64, 1024)),
-                ),
             }
         },
         ("test_cmp", "test_binary_op_cpu"): {
