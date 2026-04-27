@@ -51,7 +51,7 @@ class TestRMSNormNonContiguous(unittest.TestCase, metaclass=ParameterizedTestMet
     torch.manual_seed(0xAFFE)
 
     PARAMS = {
-        # xfail cases: non-contiguous input from transpose
+        # Non-contiguous input from transpose (#1781, fixed)
         ("test_rmsnorm_noncontig", "_base_rmsnorm_noncontig"): {
             "param_sets": {
                 "bhsd_8h_seq64": (cached_randn((1, 64, 8, 128)),),
@@ -96,8 +96,8 @@ class TestHeadLayoutTransform(unittest.TestCase, metaclass=ParameterizedTestMeta
     torch.manual_seed(0xAFFE)
 
     PARAMS = {
-        # xfail cases: multi-token sequences
-        ("test_head_layout_multitok", "_base_head_layout_multitok"): {
+        # Multi-token sequences (#1783, fixed)
+        ("test_head_layout_multitok", "_base_head_layout"): {
             "param_sets": {
                 "qwen3_q_seq64": (1, 64, 16, 128, cached_randn((1, 64, 2048))),
                 "qwen3_k_seq64": (1, 64, 8, 128, cached_randn((1, 64, 1024))),
@@ -110,8 +110,8 @@ class TestHeadLayoutTransform(unittest.TestCase, metaclass=ParameterizedTestMeta
                 ),
             },
         },
-        # Control: single-token (should pass)
-        ("test_head_layout_singletok", "_base_head_layout_singletok"): {
+        # Single-token control
+        ("test_head_layout_singletok", "_base_head_layout"): {
             "param_sets": {
                 "qwen3_q_seq1": (1, 1, 16, 128, cached_randn((1, 1, 2048))),
                 "qwen3_k_seq1": (
@@ -125,13 +125,7 @@ class TestHeadLayoutTransform(unittest.TestCase, metaclass=ParameterizedTestMeta
         },
     }
 
-    def _base_head_layout_multitok(self, B, S, H, D, x):
-        def fn(x):
-            return x.view(B, S, H, D).transpose(1, 2)
-
-        compare_with_cpu(fn, x, run_eager=False)
-
-    def _base_head_layout_singletok(self, B, S, H, D, x):
+    def _base_head_layout(self, B, S, H, D, x):
         def fn(x):
             return x.view(B, S, H, D).transpose(1, 2)
 
@@ -147,7 +141,7 @@ class TestOverwriteFill(unittest.TestCase, metaclass=ParameterizedTestMeta):
     torch.manual_seed(0xAFFE)
 
     PARAMS = {
-        # xfail cases: fill (single-row write into existing populated cache)
+        # Fill mode: single-row write into populated cache (#1765, xfail)
         ("test_overwrite_fill", "_base_overwrite_fill"): {
             "param_sets": {
                 "kv_pos0": (
