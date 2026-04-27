@@ -671,6 +671,21 @@ class TestOps(unittest.TestCase, metaclass=ParameterizedTestMeta):
                     1,
                     cached_randn((64, 25, 7, 64), abs=True),
                 ),
+                # KV-cache-like shapes (regression guard)
+                "dim_1_2_kvcache_16h": (
+                    1,
+                    2,
+                    cached_randn(
+                        (1, 16, 64, 128), abs=True, differentiation="tp4d_kv_1"
+                    ),
+                ),
+                "dim_1_2_kvcache_8h": (
+                    1,
+                    2,
+                    cached_randn(
+                        (1, 8, 192, 128), abs=True, differentiation="tp4d_kv_2"
+                    ),
+                ),
             }
         },
         ("test_cmp", "test_binary_op_cpu"): {
@@ -882,6 +897,16 @@ class TestOps(unittest.TestCase, metaclass=ParameterizedTestMeta):
                     1,
                     cached_randn((8, 64, 128), dtype=torch.float16),
                     cached_randn((8, 1, 128), dtype=torch.float16),
+                ),
+                # KV-cache regression guard (torch-spyre#1760)
+                "4d_dim2_size1_kv": (
+                    2,
+                    cached_randn(
+                        (1, 8, 64, 128), dtype=torch.float16, differentiation="cat_kv_1"
+                    ),
+                    cached_randn(
+                        (1, 8, 1, 128), dtype=torch.float16, differentiation="cat_kv_2"
+                    ),
                 ),
                 "4d_dim0": (
                     0,
@@ -1460,6 +1485,12 @@ class TestOps(unittest.TestCase, metaclass=ParameterizedTestMeta):
                 "2d": (cached_randn((256, 128), dtype=torch.float16),),
                 "3d": (cached_randn((64, 256, 128), dtype=torch.float16),),
                 "4d": (cached_randn((4, 17, 256, 128), dtype=torch.float16),),
+                # KV-cache-like contiguous 4D shape
+                "4d_kvcache_contig": (
+                    cached_randn(
+                        (1, 8, 64, 128), dtype=torch.float16, differentiation="rms_kv"
+                    ),
+                ),
             },
         },
         ("test_softplus", "test_softplus_cpu"): {
