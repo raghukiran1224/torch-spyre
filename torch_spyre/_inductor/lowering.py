@@ -610,6 +610,46 @@ def lower_moe_expert_gather(experts, input, top_k_indices, gate_scores):
     return pw
 
 
+@register_spyre_lowering(
+    torch.ops.aten.index_select.default, type_promotion_kind=None
+)
+def lower_index_select(x, dim, indices):
+    if dim != 0:
+        raise Unsupported(f"index_select on dim={dim} (only dim=0 supported)")
+
+    fn = lowering.ops_wrapper(torch.ops.spyre.moe_expert_gather.__name__)
+
+    x.realize()
+    indices.realize()
+
+    x_size = x.get_size()
+    output_size = [indices.get_size()[0]] + list(x_size[1:])
+
+    # Expand indices to match output shape for uniform iteration space
+    indices_expanded = lowering.expand(
+        lowering.unsqueeze(indices, -1),
+        output_size,
+    )
+    indices_expanded.realize()
+
+    def inner_fn(index):
+        return fn(
+            x.make_loader()(index),
+            indices_expanded.make_loader()(index),
+        )
+
+    pw = Pointwise.create(
+        device=x.get_device(),
+        dtype=x.get_dtype(),
+        inner_fn=inner_fn,
+        ranges=output_size,
+        origin_node=V.get_current_node(),
+        traceback=x.get_traceback(),
+    )
+    pw.realize()
+    return pw
+
+
 @register_spyre_lowering(torch.ops.aten.slice.Tensor, type_promotion_kind=None)
 def lower_slice(x, dim=0, start=None, end=None, step=1):
     result = lowering.slice_(x, dim=dim, start=start, end=end, step=step)
