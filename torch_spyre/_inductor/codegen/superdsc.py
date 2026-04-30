@@ -424,6 +424,9 @@ def _create_sdsc_tensors(
 
     # For each overwrite entry with a device dimension of size 1 (absent from
     # the iteration space), inject a synthetic dimension.
+    overwrite_infos = (
+        dict(op_spec.op_info.get("overwrite_infos", {})) if op_spec.op_info else {}
+    )
     for info in overwrite_infos.values():
         missing_dim = Symbol(INPUT_DIM_LABELS[len(op_dim_order)])
         iteration_space[missing_dim] = 1
