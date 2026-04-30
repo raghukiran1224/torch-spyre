@@ -320,13 +320,17 @@ def pointwise_layout(
             output.device, output.dtype, output.size, output.stride, stl
         )
     elif any(
-        getattr(o, "target", None) == spyreop.moe_expert_gather.default
+        getattr(o, "target", None) in (
+            spyreop.moe_expert_gather.default,
+            aten.index_select.default,
+            aten.index.Tensor,
+        )
         for o in data.origins
     ):
-        # MoE expert gather: the experts tensor (arg 0) and output define the
-        # layout.  The index and gate tensors are broadcast auxiliaries whose
-        # stick dimension differs — exclude them from the stick compatibility
-        # check and use default row-major layout for the output.
+        # MoE expert gather / index_select / index: these ops use indirect
+        # (data-dependent) addressing where tmp variables appear in index
+        # expressions. Use default row-major layout to avoid coordinate
+        # computation on the indirect index expressions.
         stl = SpyreTensorLayout(
             output.size, output.stride, output.dtype, list(range(len(output.size)))
         )
