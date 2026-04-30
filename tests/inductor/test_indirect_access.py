@@ -439,6 +439,57 @@ class TestMoECompilationPipeline(unittest.TestCase):
         self.assertEqual(result.shape, torch.Size([4, hidden]))
         self.assertEqual(result.device.type, "spyre")
 
+    @unittest.expectedFailure
+    @unittest.skipUnless(torch.spyre.is_available(), "requires spyre")
+    def test_granitemoe_expert_gather(self):
+        """GraniteMoE expert weight gather via index_select.
+
+        Based on GraniteMoeParallelExperts from HF transformers
+        (transformers/models/granitemoe/modeling_granitemoe.py).
+        Expert weights stored as [num_experts, output_size, input_size].
+        Gather selects expert weight matrices by index.
+
+        Currently expectedFailure: the FX pass rewrites index_select
+        to moe_expert_gather, but the stickify pass cannot handle the
+        data-dependent tmp0 variable in the resulting index expression.
+        """
+
+        class GraniteMoEExpertGather(torch.nn.Module):
+            def __init__(self, num_experts, input_size, output_size):
+                super().__init__()
+                self.weight = torch.nn.Parameter(
+                    torch.randn(
+                        num_experts,
+                        output_size,
+                        input_size,
+                        dtype=torch.float16,
+                    )
+                )
+
+            def forward(self, expert_indices):
+                return torch.index_select(
+                    self.weight, 0, expert_indices
+                )
+
+        num_experts = 8
+        input_size = 128
+        output_size = 256
+
+        model = GraniteMoEExpertGather(
+            num_experts, input_size, output_size
+        ).to("spyre")
+        indices = torch.tensor(
+            [0, 3, 5, 1], dtype=torch.int64
+        ).to("spyre")
+
+        compiled_model = torch.compile(model)
+        result = compiled_model(indices)
+
+        self.assertEqual(
+            result.shape, torch.Size([4, output_size, input_size])
+        )
+        self.assertEqual(result.device.type, "spyre")
+
 
 if __name__ == "__main__":
     unittest.main()
