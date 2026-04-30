@@ -616,26 +616,39 @@ def lower_moe_expert_gather(experts, input, top_k_indices, gate_scores):
 def lower_index_select(x, dim, indices):
     if dim != 0:
         raise Unsupported(f"index_select on dim={dim} (only dim=0 supported)")
+    return _lower_gather_dim0(x, indices)
 
+
+@register_spyre_lowering(
+    torch.ops.aten.index.Tensor, type_promotion_kind=None
+)
+def lower_index_tensor(x, indices_list):
+    if len(indices_list) != 1 or indices_list[0] is None:
+        raise Unsupported("aten.index.Tensor: only single-dim indexing supported")
+    indices = indices_list[0]
+    return _lower_gather_dim0(x, indices)
+
+
+def _lower_gather_dim0(x, indices):
     fn = lowering.ops_wrapper(torch.ops.spyre.moe_expert_gather.__name__)
 
     x.realize()
     indices.realize()
 
     x_size = x.get_size()
-    output_size = [indices.get_size()[0]] + list(x_size[1:])
+    idx_size = indices.get_size()
+    output_size = list(idx_size) + list(x_size[1:])
 
     # Expand indices to match output shape for uniform iteration space
-    indices_expanded = lowering.expand(
-        lowering.unsqueeze(indices, -1),
-        output_size,
-    )
-    indices_expanded.realize()
+    if len(idx_size) == 1 and len(x_size) > 1:
+        indices = lowering.unsqueeze(indices, -1)
+        indices = lowering.expand(indices, output_size)
+    indices.realize()
 
     def inner_fn(index):
         return fn(
             x.make_loader()(index),
-            indices_expanded.make_loader()(index),
+            indices.make_loader()(index),
         )
 
     pw = Pointwise.create(
