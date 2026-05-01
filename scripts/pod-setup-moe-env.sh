@@ -79,6 +79,7 @@ fi
 
 # Activate venv for the rest of this script
 source "$MOE_VENV/bin/activate"
+pip install pytest --quiet 2>/dev/null
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Build deeptools from MoE branch
