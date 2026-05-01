@@ -396,6 +396,10 @@ def _create_sdsc_tensors(
             ]
             gather_dim_mapped = symbol_mapping.get(gather_dim_sym, gather_dim_sym)
             current_dim_order = idx_layout["dim_order"]
+
+            idx_sdsc.data_format = DataFormats.IEEE_INT32
+            idx_elems_per_stick = DataFormats.IEEE_INT32.elems_per_stick()
+
             if idx_layout["stick_dim_order"] != gather_dim_mapped:
                 new_dim_order = [
                     d for d in current_dim_order if d != gather_dim_mapped
@@ -404,7 +408,7 @@ def _create_sdsc_tensors(
                     layouts,
                     new_dim_order,
                     gather_dim_mapped,
-                    op_spec.args[idx_arg_pos].device_dtype.elems_per_stick(),
+                    idx_elems_per_stick,
                     LAYOUT_LABELS,
                 )
                 idx_sdsc.layout = idx_label
@@ -419,8 +423,6 @@ def _create_sdsc_tensors(
                         idx_sdsc.scales[dim] = 1
                     else:
                         idx_sdsc.scales[dim] = -1
-
-            idx_sdsc.data_format = DataFormats.IEEE_INT32
 
     # For each overwrite entry with a device dimension of size 1 (absent from
     # the iteration space), inject a synthetic dimension.
