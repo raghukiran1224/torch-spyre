@@ -19,8 +19,18 @@ import importlib
 
 from .constants import DEVICE_NAME
 
-from . import memory
 from . import profiler
+
+_memory = None
+
+
+def __getattr__(name):
+    global _memory
+    if name == "memory":
+        if _memory is None:
+            _memory = importlib.import_module(".memory", __name__)
+        return _memory
+    raise AttributeError(f"module 'torch_spyre' has no attribute {name!r}")
 
 _runtime_init_lock = threading.Lock()
 
@@ -153,7 +163,7 @@ def make_spyre_module() -> types.ModuleType:
     mod.current_device = lambda: impl.current_device()
     mod.set_device = lambda idx: impl.set_device(idx)
     mod._is_compiled = lambda: True
-    mod.memory = memory
+    mod.memory = importlib.import_module(".memory", __name__)
 
     import torch  # noqa: E402
 
