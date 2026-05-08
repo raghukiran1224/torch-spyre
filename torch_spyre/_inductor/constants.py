@@ -16,6 +16,10 @@ BATCH_MATMUL_OP = "batchmatmul"
 IDENTITY_OP = "identity"
 RESTICKIFY_OP = "ReStickifyOpHBM"
 
+# Type casting operators from deeptools
+DL16TOFP32_OP = "dl16tofp32"
+FP32TODL16_OP = "fp32todl16"
+
 DEVICE_NAME = "spyre"
 
 
