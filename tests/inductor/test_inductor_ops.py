@@ -23,6 +23,7 @@ from utils_inductor import (
     make_param_dict,
     unique_randn_along_dim,
 )
+from torch_spyre._inductor.dtype_ops import DtypeOpTable
 import utils_inductor
 
 POINTWISE_UNARY_OPS_DICT = {
@@ -43,6 +44,31 @@ POINTWISE_BINARY_OPS_DICT = {
     "div": torch.div,
 }
 
+ALL_DTYPES = [
+    torch.float32,
+    torch.float16,
+    torch.bfloat16,
+    torch.bool,
+]
+
+ALL_DTYPE_PAIRS = [(src, dst) for src in ALL_DTYPES for dst in ALL_DTYPES if src != dst]
+
+DTYPE_OP_MAP = {
+    f"{str(src).replace('torch.', '')}_to_{str(dst).replace('torch.', '')}": (src, dst)
+    for src, dst in ALL_DTYPE_PAIRS
+}
+
+DTYPE_OP_SHAPES = [
+    (4, 2),
+]
+
+DTYPE_OP_PAIRS = {
+    f"{str(src).replace('torch.', '')}_to_{str(dst).replace('torch.', '')}": (
+        src,
+        dst,
+    )
+    for (src, dst) in DtypeOpTable.get_dtype_pairs()
+}
 
 FP32_EPS = torch.finfo(torch.float32).eps  # 1.1920928955078125e-07
 FP16_EPS = torch.finfo(torch.float16).eps  # 0.0009765625
@@ -2967,6 +2993,13 @@ class TestOps(unittest.TestCase, metaclass=ParameterizedTestMeta):
                 "fp32_4d_dim_3",
             ],
         },
+        ("test_to_dtype_op_map", "test_to_dtype_op_map"): {
+            "param_sets": DTYPE_OP_MAP,
+        },
+        ("test_to_dtype", "test_to_dtype_cpu"): {
+            "ops_dict": DTYPE_OP_PAIRS,
+            "param_sets": make_param_dict(tuple((s,) for s in DTYPE_OP_SHAPES)),
+        },
     }
 
     def __init__(self, *args, **kwargs):
@@ -3677,6 +3710,30 @@ class TestOps(unittest.TestCase, metaclass=ParameterizedTestMeta):
 
         # TODO(aviros): Add support for missing eager ops and debug remaining issues to match eager results
         self.compare_with_cpu(fn, q, k, v, cpu_compile=False, run_eager=False)
+
+    def test_to_dtype_op_map(self, src, dst):
+        result = DtypeOpTable.get_operator(src, dst)
+        conversions = DtypeOpTable.get_table()
+        if (src, dst) in conversions:
+            expected = conversions[(src, dst)]
+            assert result == expected, (
+                f"Expected {expected} for {src}->{dst}, got {result}"
+            )
+        else:
+            assert result is None, (
+                f"Expected None for unsupported {src}->{dst}, got {result}"
+            )
+
+    def test_to_dtype_cpu(self, dtype_pair, x):
+        src_dtype, dst_dtype = dtype_pair
+        x_src = x.to(dtype=src_dtype)
+
+        self.compare_with_cpu(
+            lambda a: a.to(dtype=dst_dtype),
+            x_src,
+            cpu_compile=False,
+            run_eager=False,
+        )
 
 
 if __name__ == "__main__":
