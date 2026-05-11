@@ -437,10 +437,8 @@ def parse_op_spec(op_spec: OpSpec) -> SDSCSpec:
         work_slices[missing_dim] = 1
 
     is_dtype_op = DtypeOpTable.is_dtype_op(op_spec.op) and op_spec.op != IDENTITY_OP
-    if is_matmul:
+    if is_matmul or is_dtype_op:
         pad_args, pad_sdsc_args = list(op_spec.args), args
-    elif is_dtype_op:
-        pad_args, pad_sdsc_args = [op_spec.args[-1]], [args[-1]]
     elif op_spec.is_reduction or op_spec.op == "overwrite":
         pad_args, pad_sdsc_args = [op_spec.args[0]], [args[0]]
     else:
