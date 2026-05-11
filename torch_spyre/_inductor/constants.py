@@ -17,9 +17,8 @@ IDENTITY_OP = "identity"
 RESTICKIFY_OP = "ReStickifyOpHBM"
 
 # Type casting operators from deeptools
-FORMAT_CONVERT_OP = "format_convert"
-DL16TOFP32_OP = FORMAT_CONVERT_OP
-FP32TODL16_OP = FORMAT_CONVERT_OP
+DL16TOFP32_OP = "dl16tofp32"
+FP32TODL16_OP = "fp32todl16"
 
 DEVICE_NAME = "spyre"
 
