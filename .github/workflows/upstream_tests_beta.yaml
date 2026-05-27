@@ -6,6 +6,9 @@ on:
     branches: [main]
     paths-ignore:
       - tests/docs/**
+      - CODEOWNERS
+      - LICENSE.txt
+      - '*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

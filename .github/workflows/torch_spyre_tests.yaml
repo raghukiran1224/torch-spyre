@@ -58,9 +58,16 @@ jobs:
           echo "Changed files:"
           echo "$FILES"
 
-          # Check if any changed file is outside the doc directories.
-          # tests/docs/ and docs/ are the only paths that should skip tests.
-          NON_DOC=$(echo "$FILES" | grep -v '^tests/docs/' | grep -v '^docs/' || true)
+          # Check if any changed file is outside the doc / metadata files.
+          # Skipped paths: tests/docs/**, docs/**, CODEOWNERS, LICENSE.txt,
+          # and any top-level *.md (e.g. README.md, CONTRIBUTING.md, CLAUDE.md).
+          NON_DOC=$(echo "$FILES" \
+            | grep -v '^tests/docs/' \
+            | grep -v '^docs/' \
+            | grep -v '^CODEOWNERS$' \
+            | grep -v '^LICENSE\.txt$' \
+            | grep -Ev '^[^/]+\.md$' \
+            || true)
 
           if [[ -z "$NON_DOC" ]]; then
             echo "Only doc files changed — skipping tests."

@@ -6,6 +6,9 @@ on:
     branches: [main]
     paths-ignore:
       - tests/docs/**
+      - CODEOWNERS
+      - LICENSE.txt
+      - '*.md'
   # Removing from CICD till the ops tests get matured
   # pull_request:
   #   branches: [main]
