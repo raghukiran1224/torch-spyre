@@ -61,4 +61,4 @@ class SpyreAsyncCompile(AsyncCompile):
         return SpyreSDSCKernelRunner(kernel_name, output_dir)
 
     def wait(self, scope: dict[str, Any]) -> None:
-        pass
+        super().wait(scope)
