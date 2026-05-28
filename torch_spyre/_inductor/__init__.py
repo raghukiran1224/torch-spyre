@@ -36,6 +36,7 @@ def _spyre_get_decomp_fn() -> dict[Any, Callable[..., Any]]:
     closure) we keep the FX graph cache key picklable.
     """
     import torch
+
     return torch._inductor.decomposition.decompositions
 
 
