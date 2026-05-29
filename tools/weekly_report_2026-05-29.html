@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>torch-spyre Weekly Trend Report — Week ending 2026-05-29</title>
+<style>
+  :root {
+    --navy: #1F3A5F;
+    --gray-bg: #F5F7FA;
+    --gray-text: #6B7280;
+    --green: #28A745;
+    --red: #DC3545;
+    --amber: #FFC107;
+    --border: #E2E8F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    padding: 18mm;
+    max-width: 210mm;
+    margin: 0 auto;
+  }
+
+  @media print { body { padding: 14mm 18mm; } }
+
+  .report-header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  .report-header h1 {
+    font-size: 21pt;
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .report-header .subtitle {
+    font-size: 10.5pt;
+    color: var(--gray-text);
+  }
+
+  h2 {
+    background: var(--navy);
+    color: white;
+    font-size: 11pt;
+    font-weight: 600;
+    padding: 5px 12px;
+    margin: 18px 0 10px 0;
+    border-radius: 3px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    font-size: 9.5pt;
+  }
+  th {
+    background: var(--navy);
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    padding: 5px 10px;
+  }
+  td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--gray-bg); }
+
+  .trend-up { color: var(--green); font-weight: 700; }
+  .trend-down { color: var(--red); font-weight: 700; }
+  .trend-flat { color: var(--gray-text); font-weight: 600; }
+
+  .risk-high { color: var(--red); font-weight: 700; }
+  .risk-med { color: var(--amber); font-weight: 600; }
+  .risk-low { color: var(--green); font-weight: 600; }
+
+  .data-banner {
+    background: #FFF3CD;
+    border-left: 4px solid var(--amber);
+    padding: 7px 12px;
+    margin-bottom: 14px;
+    font-size: 9pt;
+    color: #856404;
+  }
+
+  .headline {
+    font-size: 12pt;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 12px 16px;
+    background: #E8F5E9;
+    border-left: 5px solid var(--green);
+    margin-bottom: 18px;
+  }
+
+  .cards {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .card {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .card .v {
+    font-size: 18pt;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.1;
+  }
+  .card .d {
+    font-size: 9pt;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .card .l {
+    font-size: 8.5pt;
+    color: var(--gray-text);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 4px;
+  }
+
+  .actions {
+    list-style: none;
+    counter-reset: a;
+    padding: 0;
+    margin-bottom: 14px;
+  }
+  .actions li {
+    counter-increment: a;
+    padding: 7px 0 7px 32px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+    font-size: 10pt;
+    line-height: 1.45;
+  }
+  .actions li::before {
+    content: counter(a);
+    position: absolute;
+    left: 0; top: 7px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 9pt;
+    font-weight: 700;
+    color: white;
+  }
+  .actions li.p-high::before { background: var(--red); }
+  .actions li.p-med::before { background: var(--amber); }
+  .actions li.p-low::before { background: var(--green); }
+
+  .delta-verb {
+    font-weight: 700;
+    color: var(--navy);
+  }
+
+  code { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 9pt; background: #f0f0f0; padding: 1px 5px; border-radius: 2px; }
+
+  .anchor {
+    margin-top: 20px;
+    padding: 10px 14px;
+    background: var(--gray-bg);
+    border-radius: 3px;
+    font-size: 9.5pt;
+    border-left: 3px solid var(--navy);
+  }
+
+  .footer {
+    margin-top: 22px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    font-size: 8pt;
+    color: var(--gray-text);
+    text-align: center;
+  }
+
+  p { margin-bottom: 8px; }
+  ul { margin: 4px 0 8px 18px; font-size: 9.5pt; }
+  ul li { margin-bottom: 3px; }
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>torch-spyre Weekly Trend Report</h1>
+  <div class="subtitle">Week ending 2026-05-29 &nbsp;·&nbsp; Generated 2026-05-29 &nbsp;·&nbsp; Data: 6 daily reports + fresh GitHub state</div>
+</div>
+
+<div class="data-banner">
+  ⚠ Trend window thin: 4 daily reports for the current week, 2 for the prior. Direction is reliable; magnitudes are not. Establishing a weekday-morning daily run would tighten the next weekly considerably.
+</div>
+
+<div class="headline">
+  <strong>Net positive week, but the long tail is the worry.</strong>
+  Nightly recovered after a 5-day cat-zero-tensor regression. PR velocity up ~50% wow.
+  Bug count flat at the headline, but 9 bugs are now &gt;90 days old with no recent touch
+  and upstream API churn rose to High in both deeptools (27% API-touching) and flex (67%).
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="v" style="color: var(--green);">PASS</div>
+    <div class="d trend-up">↑ recovered (was failing 5d)</div>
+    <div class="l">Nightly today</div>
+  </div>
+  <div class="card">
+    <div class="v">30+</div>
+    <div class="d trend-up">↑ +50% vs prior week</div>
+    <div class="l">PRs merged (7d)</div>
+  </div>
+  <div class="card">
+    <div class="v">54</div>
+    <div class="d trend-flat">→ flat (count was misreported as 30 earlier)</div>
+    <div class="l">Open bugs</div>
+  </div>
+  <div class="card">
+    <div class="v" style="color: var(--red);">15</div>
+    <div class="d trend-down">↓ 28% of backlog &gt;30d old</div>
+    <div class="l">Aging + stale bugs</div>
+  </div>
+</div>
+
+<h2>What changed this week</h2>
+<ol class="actions">
+  <li class="p-high">
+    <span class="delta-verb">Backlog age tail surfaced:</span> 9 bugs now &gt;90 days old
+    with no touch in 60d (#488 bool-tensor copy, #637, #446, #456, #476, #537, ...).
+    Last week's daily reports under-reported the count due to a pagination bug; the long
+    tail was always there. <strong>Action:</strong> sweep this week — close-as-stale,
+    re-validate, or re-label.
+  </li>
+  <li class="p-high">
+    <span class="delta-verb">Upstream API risk rose to High</span> in both upstream
+    repos. <code>flex a233ca5</code> adds <code>FlexAllocator::segment_for_region</code>;
+    <code>flex 5132737</code> consolidates profiler macros (split
+    <code>PROFILER_STOP_HANDLE</code>/<code>PROFILER_STOP</code> call sites will break);
+    <code>deeptools 0ded6c7f</code> changes BaseOpt/RcuOpt header signatures.
+    <strong>Action:</strong> rebuild torch-spyre against current upstream HEADs before
+    next nightly.
+  </li>
+  <li class="p-med">
+    <span class="delta-verb">Nightly recovered</span> after 5 consecutive failures
+    (<code>test_cat_4d_dim2_zero</code>, <code>test_cat_4d_dim_m2_empty_first</code>).
+    Fix commit between May 27 and May 28 03:16 UTC isn't yet identified.
+    <strong>Action:</strong> pin down the fix commit, watch tomorrow's nightly to
+    confirm stability.
+  </li>
+  <li class="p-med">
+    <span class="delta-verb">6 Aging bugs (30–90d) lost momentum:</span> #1392 (Granite
+    vocab EAR overflow), #1712 (Llama mean), #1412, #1713, #1479, #1260.
+    <strong>Action:</strong> assign owners.
+  </li>
+  <li class="p-low">
+    <span class="delta-verb">4 fresh bugs filed:</span> #2329 (SDPA restickify), #2323
+    (torch.ne incorrect), #2314, #2313. First-touch triage needed.
+  </li>
+  <li class="p-low">
+    <span class="delta-verb">Sporadic flake class persists</span> in
+    <code>LxPlanningTwoOpReductionTest</code> (fp16 tolerance margin) — rotates between
+    layernorm and mish ops. Widening atol or seeding inputs would close it. Not currently
+    failing.
+  </li>
+</ol>
+
+<h2>Week-over-Week Trends</h2>
+<table>
+  <tr>
+    <th>Metric</th>
+    <th>This week (n=4)</th>
+    <th>Prior week (n=2)</th>
+    <th>Δ</th>
+  </tr>
+  <tr>
+    <td>Build pass days</td>
+    <td>4/4 (100%)</td>
+    <td>2/2 (100%)</td>
+    <td><span class="trend-flat">→ stable</span></td>
+  </tr>
+  <tr>
+    <td>Nightly pass days</td>
+    <td>1/4 (25%)</td>
+    <td>0/2 (0%)</td>
+    <td><span class="trend-up">↑ recovered today</span></td>
+  </tr>
+  <tr>
+    <td>PRs merged (rolling 7d at week-end)</td>
+    <td>30+</td>
+    <td>20</td>
+    <td><span class="trend-up">↑ +50%</span></td>
+  </tr>
+  <tr>
+    <td>Open bug count (true)</td>
+    <td>54</td>
+    <td>54†</td>
+    <td><span class="trend-flat">→ flat</span></td>
+  </tr>
+  <tr>
+    <td>Bugs filed in 7d</td>
+    <td>4</td>
+    <td>not captured</td>
+    <td>—</td>
+  </tr>
+</table>
+<p style="font-size: 8.5pt; color: var(--gray-text);">
+  † Earlier daily reports listed "30 open bugs." That came from
+  <code>gh issue list ... --json number | length</code> which silently caps at the
+  default page size. The true week-over-week count is 54 in both windows
+  (the daily-health-check skill needs <code>--limit 200</code>).
+</p>
+
+<h2>Persistent vs Flaky Failures</h2>
+<p><strong>No persistent failures active.</strong> All previously-persistent nightly failures resolved on the 2026-05-28 run.</p>
+
+<p><strong>Resolved this week:</strong></p>
+<ul>
+  <li><code>test_cat_4d_dim2_zero</code>, <code>test_cat_4d_dim_m2_empty_first</code> — 5 consecutive nightlies (May 22–27). Regression from PR #2089's 1D <code>[0]</code> scalar-tensor layout; PR #2259 was incomplete. Recovered May 28.</li>
+  <li><code>test_instantiate_device_type_tests_mro</code> — failed May 20–21 (PT 2.11 device-name regression). Fixed by PR #2161.</li>
+</ul>
+
+<p><strong>Intermittent (watch):</strong></p>
+<ul>
+  <li><code>test_layernorm_2d_lx_planning_reduction</code> — 2/6 days failing, fp16 tolerance class. Same shape as the now-resolved <code>test_activation_fn_mish_fp16_lx_planning_reduction</code>.</li>
+</ul>
+
+<h2>Bug Backlog Shape (54 open)</h2>
+<table>
+  <tr><th>Bucket</th><th>Count</th><th>%</th><th>Examples</th></tr>
+  <tr>
+    <td>Fresh (&lt;24h)</td>
+    <td>4</td>
+    <td>7%</td>
+    <td>#2329, #2323, #2314, #2313</td>
+  </tr>
+  <tr>
+    <td>Active (≤7d, recently updated)</td>
+    <td>32</td>
+    <td>59%</td>
+    <td>#1423, #2177, #1969, #1919, ...</td>
+  </tr>
+  <tr>
+    <td>Stalled-recent (7–30d)</td>
+    <td>3</td>
+    <td>6%</td>
+    <td>#2166, #1996, #1980</td>
+  </tr>
+  <tr>
+    <td>Aging (30–90d)</td>
+    <td>6</td>
+    <td>11%</td>
+    <td>#1392, #1712, #1412, #1713, #1479, #1260</td>
+  </tr>
+  <tr>
+    <td>Stale (&gt;90d)</td>
+    <td>9</td>
+    <td><span class="risk-high">17%</span></td>
+    <td>#488, #637, #446, #456, #476, #537</td>
+  </tr>
+</table>
+<p style="font-size: 9pt;">
+  The 59% Active share is partly inflated by automated cross-link updates on
+  old model-bringup bugs (Mistral-Small / Ministral). Real engineering activity
+  is closer to half that.
+</p>
+
+<h2>Cross-Repo Activity (Past 7 Days)</h2>
+<table>
+  <tr>
+    <th>Repo</th>
+    <th>Commits</th>
+    <th>API-touching</th>
+    <th>Risk</th>
+  </tr>
+  <tr>
+    <td>deeptools</td>
+    <td>82</td>
+    <td>22 (27%)</td>
+    <td><span class="risk-high">High</span></td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td>9</td>
+    <td>6 (67%)</td>
+    <td><span class="risk-high">High</span></td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td>56</td>
+    <td>2 (4%)</td>
+    <td>—</td>
+  </tr>
+</table>
+
+<p><strong>Notable upstream commits:</strong></p>
+<ul>
+  <li><code>flex a233ca5</code> — Add <code>FlexAllocator::segment_for_region</code> (#1034). Consumed by RuntimeStream; will surface in torch-spyre's allocator integration.</li>
+  <li><code>flex 5132737</code> — Profiler API consolidation (#1018). Re-combines <code>PROFILER_STOP_HANDLE</code>/<code>PROFILER_STOP</code>; split-macro call sites break.</li>
+  <li><code>flex c9e6f54</code> — Remove namespace-level <code>using</code> in vf_streamer.hpp (#1075). Downstream code relying on transitive symbol exposure may need explicit qualifications.</li>
+  <li><code>deeptools 0ded6c7f</code> — BaseOpt/RcuOpt 16HMI virtual hbm segments. Modifies signatures across 4 headers (19 insertions).</li>
+  <li><code>deeptools f182ab3</code> — JobPlan launch (already mirrored in torch-spyre as #2013).</li>
+</ul>
+
+<div class="anchor">
+  <strong>Week ends with</strong> all CI workflows green and 54 open bugs. PR #2218
+  (PT 2.12 upgrade) was unblocked yesterday via fix commits delivered through
+  ani300/torch-spyre#1; awaiting his review before merging upstream.
+</div>
+
+<div class="footer">
+  Generated 2026-05-29 by weekly-health-check · trends are deltas, not snapshots · for current state run daily-health-check
+</div>
+
+</body>
+</html>

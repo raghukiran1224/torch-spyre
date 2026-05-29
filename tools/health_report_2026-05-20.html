@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>torch-spyre Ecosystem Health Report — 2026-05-20</title>
+<style>
+  :root {
+    --navy: #1F3A5F;
+    --navy-light: #2C5282;
+    --gray-bg: #F5F7FA;
+    --gray-text: #6B7280;
+    --green: #28A745;
+    --red: #DC3545;
+    --amber: #FFC107;
+    --border: #E2E8F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    padding: 20mm;
+    max-width: 210mm;
+    margin: 0 auto;
+  }
+
+  @media print {
+    body { padding: 15mm 20mm; }
+    .page-break { page-break-before: always; }
+  }
+
+  /* Header */
+  .report-header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+  .report-header h1 {
+    font-size: 22pt;
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .report-header .subtitle {
+    font-size: 11pt;
+    color: var(--gray-text);
+  }
+
+  /* Sections */
+  h2 {
+    background: var(--navy);
+    color: white;
+    font-size: 11pt;
+    font-weight: 600;
+    padding: 6px 12px;
+    margin: 20px 0 10px 0;
+    border-radius: 3px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 10pt;
+  }
+  th {
+    background: var(--navy);
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 10px;
+  }
+  td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td {
+    background: var(--gray-bg);
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-pass { background: #D4EDDA; color: #155724; }
+  .badge-fail { background: #F8D7DA; color: #721C24; }
+  .badge-warn { background: #FFF3CD; color: #856404; }
+  .badge-info { background: #D1ECF1; color: #0C5460; }
+
+  /* Risk indicators */
+  .risk-high { color: var(--red); font-weight: 700; }
+  .risk-med { color: var(--amber); font-weight: 600; }
+  .risk-low { color: var(--green); font-weight: 600; }
+
+  /* Lists */
+  .action-items {
+    list-style: none;
+    counter-reset: action;
+    padding: 0;
+  }
+  .action-items li {
+    counter-increment: action;
+    padding: 6px 0 6px 32px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .action-items li::before {
+    content: counter(action);
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 9pt;
+    font-weight: 700;
+    color: white;
+  }
+  .action-items li.priority-high::before { background: var(--red); }
+  .action-items li.priority-med::before { background: var(--amber); }
+  .action-items li.priority-low::before { background: var(--green); }
+
+  /* Triage section */
+  .triage-block {
+    background: var(--gray-bg);
+    border-left: 4px solid var(--red);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 10pt;
+  }
+  .triage-block h3 {
+    font-size: 10pt;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .triage-block p { margin: 2px 0; }
+
+  /* Summary cards */
+  .summary-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .summary-card {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .summary-card .value {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .summary-card .label {
+    font-size: 9pt;
+    color: var(--gray-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Footer */
+  .report-footer {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 9pt;
+    color: var(--gray-text);
+    text-align: center;
+  }
+
+  /* Velocity inline */
+  .metric-inline {
+    display: inline-block;
+    margin-right: 24px;
+    font-size: 10pt;
+  }
+  .metric-inline .num {
+    font-weight: 700;
+    color: var(--navy);
+    font-size: 14pt;
+  }
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>torch-spyre Ecosystem Health Report</h1>
+  <div class="subtitle">May 20, 2026 &nbsp;|&nbsp; Pod: rganti-spyre-main &nbsp;|&nbsp; PyTorch 2.11.0</div>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-row">
+  <div class="summary-card">
+    <div class="value" style="color: #28A745;">3/3</div>
+    <div class="label">Build Pass</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color: #FFC107;">3/4</div>
+    <div class="label">CI Passing</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">20</div>
+    <div class="label">PRs Merged (7d)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color: #DC3545;">30</div>
+    <div class="label">Open Bugs</div>
+  </div>
+</div>
+
+<h2>Build Status</h2>
+<table>
+  <tr><th>Component</th><th>Commit</th><th>Status</th><th>Notes</th></tr>
+  <tr>
+    <td>deeptools</td>
+    <td><code>7325fd8d0e</code> — int32→int64 cast conversions</td>
+    <td><span class="badge badge-pass">Pass</span></td>
+    <td>Incremental build</td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td><code>8263267</code> — Upgrade to C++20</td>
+    <td><span class="badge badge-pass">Pass</span></td>
+    <td>Full install</td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td><code>cd0d529</code> — Per-test per-op tags utility</td>
+    <td><span class="badge badge-pass">Pass</span></td>
+    <td>Editable wheel, ~1m 17s</td>
+  </tr>
+</table>
+
+<h2>CI Status</h2>
+<table>
+  <tr><th>Workflow</th><th>Last Run</th><th>Status</th><th>Trend</th></tr>
+  <tr>
+    <td>Spyre Hardware Tests</td>
+    <td>May 20</td>
+    <td><span class="badge badge-pass">Pass</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Linters</td>
+    <td>May 20</td>
+    <td><span class="badge badge-pass">Pass</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Upstream PyTorch Tests</td>
+    <td>May 20</td>
+    <td><span class="badge badge-pass">Pass</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Nightly Tests</td>
+    <td>May 20</td>
+    <td><span class="badge badge-fail">Fail</span></td>
+    <td>Persistently failing (3+ days)</td>
+  </tr>
+</table>
+
+<h2>Nightly Failure Triage</h2>
+
+<div class="triage-block">
+  <h3>Failure 1: test_instantiate_device_type_tests_mro</h3>
+  <p><strong>Error:</strong> AssertionError — expected <code>_TestMROCheckPRIVATEUSE1</code>, got <code>_TestMROCheckSPYRE</code></p>
+  <p><strong>Root cause:</strong> PyTorch 2.11 uses registered device name instead of generic PRIVATEUSE1</p>
+  <p><strong>Duration:</strong> Since May 16 &nbsp;|&nbsp; <strong>Assessment:</strong> Regression (PT upgrade)</p>
+  <p><strong>Fix:</strong> Branch <code>fix-mro-test-pt211</code> (commit <code>81dcb4e</code>) — needs merge to main</p>
+</div>
+
+<div class="triage-block">
+  <h3>Failure 2: test_activation_fn_mish_fp16_lx_planning_reduction</h3>
+  <p><strong>Error:</strong> Compiled vs CPU mismatch — 1/128 elements off by 0.18, tolerance 0.01</p>
+  <p><strong>Root cause:</strong> PR #2071 changed seed strategy; new inputs hit fp16 precision boundary</p>
+  <p><strong>Duration:</strong> Since May 19 &nbsp;|&nbsp; <strong>Assessment:</strong> Deterministic precision edge case</p>
+  <p><strong>Fix needed:</strong> Widen atol for mish+reduction combo or adjust seed</p>
+</div>
+
+<h2>Version Alignment</h2>
+<table>
+  <tr><th>Check</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+  <tr>
+    <td>PyTorch</td>
+    <td><code>~=2.11.0</code> (pyproject.toml)</td>
+    <td>2.11.0+cpu</td>
+    <td><span class="badge badge-pass">Match</span></td>
+  </tr>
+</table>
+
+<h2>Repo Drift (Last 7 Days)</h2>
+<table>
+  <tr><th>Repository</th><th>Total Commits</th><th>API-Touching</th><th>Risk</th></tr>
+  <tr>
+    <td>deeptools</td>
+    <td>90</td>
+    <td>10</td>
+    <td><span class="risk-high">HIGH</span></td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td>17</td>
+    <td>9</td>
+    <td><span class="risk-high">HIGH</span></td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td>59</td>
+    <td>—</td>
+    <td>—</td>
+  </tr>
+</table>
+<p style="font-size: 9pt; color: var(--gray-text); margin-top: -10px;">
+  Key upstream changes: flex C++20 upgrade, warnings-as-errors enabled; deeptools EmitBinaryOptions refactor, new dfrt_send/rec signatures.
+</p>
+
+<h2>Blocking PRs</h2>
+<table>
+  <tr><th>PR</th><th>Title</th><th>Why Blocking</th><th>Review</th><th>Age</th></tr>
+  <tr>
+    <td>#1764</td>
+    <td>Add SpyreCode to JobPlan translation</td>
+    <td>Cross-repo interface (flex/deeptools)</td>
+    <td><span class="badge badge-warn">Review Required</span></td>
+    <td>27 days</td>
+  </tr>
+</table>
+<p style="font-size: 9pt; color: var(--gray-text);">
+  Additionally: 9 dependabot PRs open (actions/checkout v6, actions/cache v5, setup-uv v8, etc.)
+</p>
+
+<h2>Project Velocity</h2>
+<div style="margin: 8px 0 16px 0;">
+  <span class="metric-inline"><span class="num">20</span> merged (7d)</span>
+  <span class="metric-inline"><span class="num">20</span> in review</span>
+  <span class="metric-inline"><span class="num">19</span> stalled (&gt;7d)</span>
+</div>
+<p style="font-size: 10pt;">
+  Velocity is strong at ~3 merges/day. Notable stalled: #816 Multi-Spyre Device (82 days), #1721 approved but unmerged (29 days).
+</p>
+
+<h2>Open Bugs</h2>
+<table>
+  <tr><th>Metric</th><th>Value</th><th>Trend</th></tr>
+  <tr>
+    <td>Total open</td>
+    <td><strong>30</strong></td>
+    <td>Growing — 0 closures in 12 days</td>
+  </tr>
+  <tr>
+    <td>New (24h)</td>
+    <td>1</td>
+    <td>#2166 softmax sub-optimal performance</td>
+  </tr>
+  <tr>
+    <td>Filed (7d)</td>
+    <td>+3</td>
+    <td>#2166, #2087, #2070</td>
+  </tr>
+  <tr>
+    <td>Closed (7d)</td>
+    <td>0</td>
+    <td><span class="risk-high">Fix velocity stalled</span></td>
+  </tr>
+</table>
+
+<h2>Smoke Test</h2>
+<table>
+  <tr><th>Test</th><th>Result</th></tr>
+  <tr><td>Import &amp; device detection</td><td><span class="badge badge-pass">Pass</span></td></tr>
+  <tr><td>Eager execution (fp16 add)</td><td><span class="badge badge-pass">Pass</span></td></tr>
+  <tr><td>Compiled execution (inductor)</td><td><span class="badge badge-pass">Pass</span></td></tr>
+</table>
+
+<h2>Action Items</h2>
+<ol class="action-items">
+  <li class="priority-high"><strong>Merge branch <code>fix-mro-test-pt211</code> to main</strong> — fixes nightly MRO test failure (blocking 4+ days)</li>
+  <li class="priority-high"><strong>Fix mish fp16 tolerance</strong> in <code>test_inductor_ops_lx_planning.py</code> — widen atol or adjust seed (failing since May 19)</li>
+  <li class="priority-med"><strong>Address bug fix velocity</strong> — 30 open bugs, 0 closures in 12 days; triage and assign top items</li>
+  <li class="priority-med"><strong>Merge PR #1721</strong> — approved 29 days ago, just needs final merge action</li>
+  <li class="priority-low"><strong>Batch merge dependabot PRs</strong> — 9 open, risk of GitHub deprecating older action versions</li>
+  <li class="priority-low"><strong>Monitor upstream risk</strong> — 90 deeptools + 17 flex commits with header/API changes this week</li>
+</ol>
+
+<div class="report-footer">
+  Generated by Claude Code &nbsp;|&nbsp; May 20, 2026 12:30 UTC
+</div>
+
+</body>
+</html>

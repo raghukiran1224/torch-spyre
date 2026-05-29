@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>torch-spyre Ecosystem Health Report — 2026-05-26</title>
+<style>
+  :root {
+    --navy: #1F3A5F;
+    --navy-light: #2C5282;
+    --gray-bg: #F5F7FA;
+    --gray-text: #6B7280;
+    --green: #28A745;
+    --red: #DC3545;
+    --amber: #FFC107;
+    --border: #E2E8F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    padding: 20mm;
+    max-width: 210mm;
+    margin: 0 auto;
+  }
+
+  @media print {
+    body { padding: 15mm 20mm; }
+    .page-break { page-break-before: always; }
+  }
+
+  .report-header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+  .report-header h1 {
+    font-size: 22pt;
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .report-header .subtitle {
+    font-size: 11pt;
+    color: var(--gray-text);
+  }
+
+  h2 {
+    background: var(--navy);
+    color: white;
+    font-size: 11pt;
+    font-weight: 600;
+    padding: 6px 12px;
+    margin: 20px 0 10px 0;
+    border-radius: 3px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 10pt;
+  }
+  th {
+    background: var(--navy);
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 10px;
+  }
+  td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td {
+    background: var(--gray-bg);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-pass { background: #D4EDDA; color: #155724; }
+  .badge-fail { background: #F8D7DA; color: #721C24; }
+  .badge-warn { background: #FFF3CD; color: #856404; }
+  .badge-info { background: #D1ECF1; color: #0C5460; }
+
+  .risk-high { color: var(--red); font-weight: 700; }
+  .risk-med { color: var(--amber); font-weight: 600; }
+  .risk-low { color: var(--green); font-weight: 600; }
+
+  .action-items {
+    list-style: none;
+    counter-reset: action;
+    padding: 0;
+  }
+  .action-items li {
+    counter-increment: action;
+    padding: 6px 0 6px 32px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .action-items li::before {
+    content: counter(action);
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 9pt;
+    font-weight: 700;
+    color: white;
+  }
+  .action-items li.priority-high::before { background: var(--red); }
+  .action-items li.priority-med::before { background: var(--amber); }
+  .action-items li.priority-low::before { background: var(--green); }
+
+  .triage-block {
+    background: var(--gray-bg);
+    border-left: 4px solid var(--red);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 10pt;
+  }
+  .triage-block h3 {
+    font-size: 10pt;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .triage-block p { margin: 2px 0; }
+
+  .summary-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .summary-card {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .summary-card .value {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .summary-card .label {
+    font-size: 9pt;
+    color: var(--gray-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .report-footer {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 9pt;
+    color: var(--gray-text);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>torch-spyre Ecosystem Health Report</h1>
+  <div class="subtitle">Date: 2026-05-26 &nbsp;|&nbsp; Pod: rganti-spyre-main &nbsp;|&nbsp; PyTorch: 2.11.0+cpu</div>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-row">
+  <div class="summary-card">
+    <div class="value" style="color: var(--green);">3/3</div>
+    <div class="label">Build Pass</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color: var(--red);">FAIL</div>
+    <div class="label">Nightly CI</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">55</div>
+    <div class="label">PRs Merged (7d)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">30</div>
+    <div class="label">Open Bugs</div>
+  </div>
+</div>
+
+<h2>Build Status</h2>
+<table>
+  <tr><th>Component</th><th>Commit</th><th>Status</th><th>Notes</th></tr>
+  <tr>
+    <td>deeptools</td>
+    <td><code>1969000189</code> — [DDC/ddl] use bitwise OR in identity so that it is type agnostic</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>cmake + make -j16 install (~13 min)</td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td><code>c9e6f54</code> — perf(Issue #1077): remove using directive (#1075)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>cmake + make -j16 install (~1 min)</td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td><code>0155120</code> — Resolved missing attribute error in LX planning op tests (#2248)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>uv sync editable install (~1m 44s)</td>
+  </tr>
+</table>
+
+<h2>CI Status</h2>
+<table>
+  <tr><th>Workflow</th><th>Latest</th><th>Status</th><th>Trend</th></tr>
+  <tr>
+    <td>Spyre Hardware Tests</td>
+    <td>2026-05-26</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Linters</td>
+    <td>2026-05-26</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Upstream PyTorch Tests</td>
+    <td>2026-05-26</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Nightly Tests</td>
+    <td>2026-05-26</td>
+    <td><span class="badge badge-fail">FAIL</span></td>
+    <td><span class="risk-high">Persistently failing (10+ days, 3 tests remaining)</span></td>
+  </tr>
+</table>
+
+<h2>Nightly Failure Triage</h2>
+
+<div class="triage-block">
+  <h3>Failure 1 &amp; 2: aten.cat with zero-sized tensors — REGRESSION</h3>
+  <p><strong>Tests:</strong> <code>test_cat_4d_dim2_zero</code>, <code>test_cat_4d_dim_m2_empty_first</code></p>
+  <p><strong>Error:</strong> <code>InductorError: LoweringException: AssertionError</code> — dim out of range for 1D empty tensor [0]</p>
+  <p><strong>Root cause:</strong> PR #2259 ("Fix aten.cat lowering crash with zero-sized tensor inputs") merged May 22 but fix is ineffective in nightly environment. The lowering still receives a 1D <code>[0]</code> tensor and cat along dim=2/-2 triggers assertion.</p>
+  <p><strong>Duration:</strong> 10+ consecutive days (since before May 17)</p>
+  <p><strong>Assessment:</strong> <span class="risk-high">Regression — PR #2259 fix incomplete, needs lowering-level guard</span></p>
+</div>
+
+<div class="triage-block" style="border-left-color: var(--amber);">
+  <h3>Failure 3: layernorm_2d_lx_planning_reduction — FLAKY</h3>
+  <p><strong>Test:</strong> <code>LxPlanningTwoOpReductionTest::test_layernorm_2d_lx_planning_reduction</code></p>
+  <p><strong>Error:</strong> <code>AssertionError: compiled spyre &lt;-&gt; cpu mismatch</code> — 1/128 elements, abs diff 0.156 vs 0.1 tolerance</p>
+  <p><strong>Root cause:</strong> Borderline fp16 precision in LX planning reduction mode. Rotating flaky — previously hit mish, now layernorm. Single-element outlier in fp16 multi-op compiled graph.</p>
+  <p><strong>Duration:</strong> Intermittent (rotates between different ops in LxPlanningTwoOpReductionTest)</p>
+  <p><strong>Assessment:</strong> <span class="risk-med">Flaky — tolerance too tight for fp16 + LX planning reduction</span></p>
+</div>
+
+<p><strong>Overall nightly:</strong> 3 failed, 2255 passed, 62 skipped, 1048 deselected, 323 xfailed, 2 xpassed. Pass rate: 99.87%.</p>
+
+<h2>Version Alignment</h2>
+<table>
+  <tr><th>Check</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+  <tr>
+    <td>PyTorch</td>
+    <td><code>torch~=2.11.0</code> (pyproject.toml)</td>
+    <td><code>2.11.0+cpu</code></td>
+    <td><span class="badge badge-pass">MATCH</span></td>
+  </tr>
+</table>
+
+<h2>Repo Drift (last 7 days)</h2>
+<table>
+  <tr><th>Repo</th><th>Commits</th><th>API-touching</th><th>Risk</th></tr>
+  <tr>
+    <td>deeptools</td>
+    <td>82</td>
+    <td>10+ (DCC, BaseOpt, RcuOpt, HBM internals)</td>
+    <td><span class="risk-low">Low</span> — compiler internals, no torch-spyre API surface changes</td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td>8</td>
+    <td>6 (allocator refactor, MemoryType addition)</td>
+    <td><span class="risk-med">Medium</span> — FlexAllocator::allocate signature change + MemoryType added</td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td>43</td>
+    <td>—</td>
+    <td>—</td>
+  </tr>
+</table>
+
+<p><strong>Key flex changes:</strong> <code>bbea5e3</code> adds MemoryType to FlexAllocator; <code>8f06481</code> removes default directive from FlexAllocator::allocate. Build passes — torch-spyre already adapted via PR #2190 (merged this week).</p>
+
+<h2>Blocking PRs</h2>
+<table>
+  <tr><th>PR</th><th>Title</th><th>Why Blocking</th><th>Review Status</th></tr>
+  <tr>
+    <td>#2218</td>
+    <td>Upgrade to PT 2.12</td>
+    <td>Major dependency upgrade — blocks all PT 2.12 features</td>
+    <td><span class="badge badge-warn">REVIEW REQUIRED</span></td>
+  </tr>
+</table>
+<p>8 dependency PRs (dependabot) are stalled and represent accumulated CI/tooling debt.</p>
+
+<h2>Project Velocity</h2>
+<table>
+  <tr><th>Metric</th><th>Value</th><th>Assessment</th></tr>
+  <tr>
+    <td>PRs merged (7 days)</td>
+    <td><strong>55</strong></td>
+    <td><span class="risk-low">Excellent</span> — ~7.9 PRs/day</td>
+  </tr>
+  <tr>
+    <td>PRs in active review</td>
+    <td>18</td>
+    <td>Healthy pipeline</td>
+  </tr>
+  <tr>
+    <td>PRs approved (ready to merge)</td>
+    <td>3</td>
+    <td>#2180, #2269, #2274</td>
+  </tr>
+  <tr>
+    <td>Stalled PRs (&gt;7 days)</td>
+    <td>36</td>
+    <td><span class="risk-med">Needs triage</span> — many community contributions</td>
+  </tr>
+  <tr>
+    <td>Draft PRs</td>
+    <td>11</td>
+    <td>Normal</td>
+  </tr>
+</table>
+
+<h2>Open Bugs</h2>
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr>
+    <td>Total open bugs</td>
+    <td><strong>30</strong></td>
+  </tr>
+  <tr>
+    <td>New (last 24h)</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>Filed (last 7 days)</td>
+    <td>6 (propagate_hints x2, logical_not, Mistral-Small, MHA, Mistral unexpected arg)</td>
+  </tr>
+  <tr>
+    <td>Closed (last 7 days)</td>
+    <td>5 (torch.ne, dtype cast, expand, getitem, BMM dim labels)</td>
+  </tr>
+  <tr>
+    <td>Net change</td>
+    <td>+1 (roughly balanced)</td>
+  </tr>
+  <tr>
+    <td>Category breakdown</td>
+    <td>22 model-enablement, 8 inductor, 4 backend-compiler</td>
+  </tr>
+</table>
+
+<h2>Smoke Test</h2>
+<table>
+  <tr><th>Test</th><th>Status</th><th>Details</th></tr>
+  <tr>
+    <td>Import &amp; device detection</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Spyre available, 1 device, torch 2.11.0+cpu</td>
+  </tr>
+  <tr>
+    <td>Eager execution (fp16 add)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>4x4 tensor add on spyre device</td>
+  </tr>
+  <tr>
+    <td>Compiled execution (torch.compile)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>128x128 fp16 add via Inductor/Spyre backend</td>
+  </tr>
+  <tr>
+    <td>Model E2E (Qwen3 0.6B)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>5 tokens, load 2.9s, generate 73.9s — output: "Paris. The capital of"</td>
+  </tr>
+</table>
+
+<h2>Action Items</h2>
+<ol class="action-items">
+  <li class="priority-high"><strong>[P1] Fix nightly cat regression:</strong> PR #2259 is ineffective — investigate why zero-sized tensor filtering doesn't prevent the lowering assertion. Likely needs a guard at the Inductor lowering level, not just decomposition.</li>
+  <li class="priority-med"><strong>[P2] Fix nightly layernorm tolerance:</strong> Relax atol for LxPlanningTwoOpReductionTest (fp16 multi-op graphs) from 0.1 to 0.2, or pin random seed.</li>
+  <li class="priority-med"><strong>[P2] Merge 3 approved PRs:</strong> #2180 (eq scalar), #2269 (test docs), #2274 (CI fix) — all approved, ready to land.</li>
+  <li class="priority-low"><strong>[P3] Prevent transformers downgrade:</strong> Add post-build step to re-install hf_adapters deps after uv sync (transformers>=5.0 gets clobbered by lockfile).</li>
+  <li class="priority-low"><strong>[P3] Review PT 2.12 upgrade (#2218):</strong> 5 days old, high-impact — needs thorough review before merge.</li>
+  <li class="priority-low"><strong>[P3] Triage stalled PRs:</strong> 36 PRs have no activity &gt;7 days — close abandoned ones, request rebases on viable ones.</li>
+</ol>
+
+<div class="report-footer">
+  Generated by Claude Code &nbsp;|&nbsp; torch-spyre daily health check &nbsp;|&nbsp; 2026-05-26
+</div>
+
+</body>
+</html>

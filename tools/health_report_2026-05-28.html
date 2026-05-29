@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>torch-spyre Ecosystem Health Report — 2026-05-28</title>
+<style>
+  :root {
+    --navy: #1F3A5F;
+    --navy-light: #2C5282;
+    --gray-bg: #F5F7FA;
+    --gray-text: #6B7280;
+    --green: #28A745;
+    --red: #DC3545;
+    --amber: #FFC107;
+    --border: #E2E8F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    padding: 20mm;
+    max-width: 210mm;
+    margin: 0 auto;
+  }
+
+  @media print {
+    body { padding: 15mm 20mm; }
+    .page-break { page-break-before: always; }
+  }
+
+  .report-header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+  .report-header h1 {
+    font-size: 22pt;
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .report-header .subtitle {
+    font-size: 11pt;
+    color: var(--gray-text);
+  }
+
+  h2 {
+    background: var(--navy);
+    color: white;
+    font-size: 11pt;
+    font-weight: 600;
+    padding: 6px 12px;
+    margin: 20px 0 10px 0;
+    border-radius: 3px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 10pt;
+  }
+  th {
+    background: var(--navy);
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 10px;
+  }
+  td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td {
+    background: var(--gray-bg);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-pass { background: #D4EDDA; color: #155724; }
+  .badge-fail { background: #F8D7DA; color: #721C24; }
+  .badge-warn { background: #FFF3CD; color: #856404; }
+  .badge-info { background: #D1ECF1; color: #0C5460; }
+
+  .risk-high { color: var(--red); font-weight: 700; }
+  .risk-med { color: var(--amber); font-weight: 600; }
+  .risk-low { color: var(--green); font-weight: 600; }
+
+  .action-items {
+    list-style: none;
+    counter-reset: action;
+    padding: 0;
+  }
+  .action-items li {
+    counter-increment: action;
+    padding: 6px 0 6px 32px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .action-items li::before {
+    content: counter(action);
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 9pt;
+    font-weight: 700;
+    color: white;
+  }
+  .action-items li.priority-high::before { background: var(--red); }
+  .action-items li.priority-med::before { background: var(--amber); }
+  .action-items li.priority-low::before { background: var(--green); }
+
+  .triage-block {
+    background: var(--gray-bg);
+    border-left: 4px solid var(--green);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 10pt;
+  }
+  .triage-block h3 {
+    font-size: 10pt;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .triage-block p { margin: 2px 0; }
+
+  .summary-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .summary-card {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .summary-card .value {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .summary-card .label {
+    font-size: 9pt;
+    color: var(--gray-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .report-footer {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 9pt;
+    color: var(--gray-text);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>torch-spyre Ecosystem Health Report</h1>
+  <div class="subtitle">Date: 2026-05-28 &nbsp;|&nbsp; Pod: rganti-spyre-main &nbsp;|&nbsp; PyTorch: 2.11.0+cpu</div>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-row">
+  <div class="summary-card">
+    <div class="value" style="color: var(--green);">3/3</div>
+    <div class="label">Build Pass</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color: var(--green);">PASS</div>
+    <div class="label">Nightly CI</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">30+</div>
+    <div class="label">PRs Merged (7d)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">30</div>
+    <div class="label">Open Bugs</div>
+  </div>
+</div>
+
+<h2>What Needs Attention</h2>
+<ol class="action-items">
+  <li class="priority-med"><strong>PR #2218 (Upgrade to PT 2.12) still idle</strong> — Open since 2026-05-21, REVIEW_REQUIRED. Cross-repo PyTorch version bump deserves reviewer attention given upstream impact.</li>
+  <li class="priority-med"><strong>Quick wins stalled in review</strong> — #1440 (cpu_compile flags) and #1444 (linters.yaml typo) are APPROVED but unmerged since 2026-04-08. ~30 PRs are >7 days stale.</li>
+  <li class="priority-med"><strong>Two new infra bugs from mudhakar</strong> — #2246 (propagate_hints thread safety) and #2247 (positional matching) target hint plumbing; thread-safety implications warrant near-term attention.</li>
+  <li class="priority-low"><strong>Confirm nightly stability tomorrow</strong> — Today's nightly recovered after 4 consecutive failures (cat zero-tensor regression). Watch tomorrow's run to rule out flakiness.</li>
+  <li class="priority-low"><strong>Heavy upstream churn in deeptools (82 commits, 7d)</strong> — Build clean today, but BaseOpt/RcuOpt allocator and DCC ProgIR changes warrant continued monitoring; flex FlexAllocator API consolidation is in flight.</li>
+</ol>
+
+<h2>Build Status</h2>
+<table>
+  <tr><th>Component</th><th>Commit</th><th>Status</th><th>Notes</th></tr>
+  <tr>
+    <td>deeptools</td>
+    <td><code>d13b64bf5a</code> — [Util] revert -1M saturation in FloatToFp16BinInternal()</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Incremental cmake + make -j16 install (~1m 11s)</td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td><code>a233ca5</code> — Add region_id to segment_id mapping to FlexAllocator (#1034)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Cached configure + install (~12s)</td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td><code>57da23f</code> — Fix core-div-mismatch logic with PerCoreView (#2298)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>uv sync editable install (~2m 18s). Total stack build wall time: ~3m 41s</td>
+  </tr>
+</table>
+
+<h2>CI Status</h2>
+<table>
+  <tr><th>Workflow</th><th>Latest</th><th>Status</th><th>Trend</th></tr>
+  <tr>
+    <td>Spyre Hardware Tests</td>
+    <td>2026-05-28 11:32 UTC</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy (success, success, cancelled)</td>
+  </tr>
+  <tr>
+    <td>Linters</td>
+    <td>2026-05-28 11:32 UTC</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy (one isolated failure mid-cycle, recovered)</td>
+  </tr>
+  <tr>
+    <td>Upstream PyTorch Tests</td>
+    <td>2026-05-28 11:32 UTC</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Nightly Tests</td>
+    <td>2026-05-28 03:16 UTC</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td><span class="risk-low">Recently recovered after 4-day cat zero-tensor failure streak</span></td>
+  </tr>
+</table>
+
+<h2>Nightly Failure Triage</h2>
+
+<div class="triage-block">
+  <h3>Status: PASSING (recovered today after 4 consecutive failures)</h3>
+  <p><strong>Today's run (2026-05-28):</strong> 2293 passed, 54 skipped, 2 previously-failing tests now green.</p>
+  <p><strong>Resolved tests:</strong> <code>test_cat_4d_dim2_zero</code>, <code>test_cat_4d_dim_m2_empty_first</code> (in <code>tests/inductor/test_inductor_ops.py</code>).</p>
+  <p><strong>Prior error:</strong> <code>InductorError: LoweringException: AssertionError</code> in <code>aten.cat.default</code> lowering when one input was an empty 1D tensor (size [0], stride [1]) and the other a 4D fp16 tensor; failures were deterministic across May 24-27.</p>
+  <p><strong>Assessment:</strong> Resolved persistent regression. Fix landed between 2026-05-27 and 2026-05-28 03:16 UTC. <span class="risk-low">No flakiness pattern.</span></p>
+  <p><strong>Recommended action:</strong> Confirm tomorrow's nightly stays green. Identify the fix commit if user wants to acknowledge the contributor.</p>
+</div>
+
+<h2>Version Alignment</h2>
+<table>
+  <tr><th>Check</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+  <tr>
+    <td>PyTorch</td>
+    <td><code>torch~=2.11.0</code> (pyproject.toml)</td>
+    <td><code>2.11.0+cpu</code></td>
+    <td><span class="badge badge-pass">MATCH</span></td>
+  </tr>
+  <tr>
+    <td>transformers (post-build)</td>
+    <td><code>>=5.0</code> (hf_adapters)</td>
+    <td><code>4.57.6</code> after uv sync; bumped to <code>5.9.0</code> for E2E</td>
+    <td><span class="badge badge-warn">DRIFT (post-install)</span></td>
+  </tr>
+</table>
+
+<h2>Repo Drift (last 7 days)</h2>
+<table>
+  <tr><th>Repo</th><th>Commits</th><th>API-touching</th><th>Risk</th></tr>
+  <tr>
+    <td>deeptools</td>
+    <td>82</td>
+    <td>10+ (DCC, BaseOpt, RcuOpt allocator, DataOp burst, senarch, DSM internals)</td>
+    <td><span class="risk-med">Medium</span> — Heavy churn, but build still clean. Top: <code>cdec8614d0</code> external/DDB cstdint, <code>cb6cd81ce0</code> senulator reg-write delay, <code>18e61c1146</code> DCC nop reduction</td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td>11</td>
+    <td>7 (FlexAllocator API, profiler API consolidation)</td>
+    <td><span class="risk-med">Medium</span> — <code>a233ca5</code> region_id→segment_id mapping, <code>5132737</code> profiler API consolidation, <code>8f06481</code> remove default directive from FlexAllocator::allocate</td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td>63</td>
+    <td>—</td>
+    <td>—</td>
+  </tr>
+</table>
+
+<h2>Blocking PRs / Notable Open</h2>
+<table>
+  <tr><th>PR</th><th>Title</th><th>Why Notable</th><th>Status</th></tr>
+  <tr>
+    <td>#2218</td>
+    <td>Upgrade to PT 2.12</td>
+    <td>Cross-repo PyTorch version bump</td>
+    <td>REVIEW_REQUIRED (7d open)</td>
+  </tr>
+  <tr>
+    <td>#2275</td>
+    <td>Replace dataFromat_ label in SDSC with fp32 for int32 identity</td>
+    <td>Touches SDSC/deeptools-adjacent label semantics</td>
+    <td>REVIEW_REQUIRED</td>
+  </tr>
+  <tr>
+    <td>#2107</td>
+    <td>Fix layernormscale output scale for fp32 LayerNorm</td>
+    <td>FP32 numeric correctness; fixes #1980</td>
+    <td>REVIEW_REQUIRED (13d, stalled)</td>
+  </tr>
+  <tr>
+    <td>#1943</td>
+    <td>Dualkineto integration</td>
+    <td>torch-profiler cross-component</td>
+    <td>CHANGES_REQUESTED (stalled)</td>
+  </tr>
+  <tr>
+    <td>#2003</td>
+    <td>Support PyTorch mark_dynamic API with max</td>
+    <td>PyTorch API compat / dynamic shapes</td>
+    <td>REVIEW_REQUIRED (17d, stalled)</td>
+  </tr>
+  <tr>
+    <td>#1440 / #1444</td>
+    <td>cpu_compile flags fix / linters.yaml typo</td>
+    <td>APPROVED, ready to merge — easy wins</td>
+    <td>APPROVED (50d, stalled)</td>
+  </tr>
+</table>
+
+<h2>Project Velocity (last 7 days)</h2>
+<table>
+  <tr><th>Metric</th><th>Count</th></tr>
+  <tr><td>PRs merged</td><td>30+ (query hit 30-PR limit)</td></tr>
+  <tr><td>Open PRs (non-draft)</td><td>~58</td></tr>
+  <tr><td>Stalled PRs (no activity &gt;7d)</td><td>30+</td></tr>
+  <tr><td>Top stalled by age</td><td>#1299 (dependabot, 03-31), #1440 (APPROVED, 04-08), #1444 (APPROVED, 04-08), #1576/#1577 (dependabot, 04-14)</td></tr>
+</table>
+
+<h2>Open Bugs</h2>
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Total open bugs</td><td>30</td></tr>
+  <tr><td>New (last 24h)</td><td>0</td></tr>
+  <tr><td>Filed (last 7d)</td><td>4 — #2247, #2246, #2222, #2207</td></tr>
+  <tr><td>Closed (last 7d)</td><td>13 — strong fix velocity</td></tr>
+  <tr><td>Net trend (7d)</td><td><span class="risk-low">-9 (closed 3x faster than filed)</span></td></tr>
+  <tr><td>Critical/priority labels</td><td>None set (no priority labels in use)</td></tr>
+</table>
+
+<h3 style="font-size: 11pt; margin-top: 10px;">Recent Filings (last 7 days)</h3>
+<table>
+  <tr><th>Issue</th><th>Title</th><th>Area</th></tr>
+  <tr><td>#2247</td><td>propagate_hints positional matching</td><td>Inductor</td></tr>
+  <tr><td>#2246</td><td>propagate_hints thread safety</td><td>Inductor</td></tr>
+  <tr><td>#2222</td><td>logical_not bool decomp</td><td>Op coverage</td></tr>
+  <tr><td>#2207</td><td>Mistral-Small unexpected stick expression</td><td>Model enablement</td></tr>
+</table>
+
+<h2>Smoke Test (post-build)</h2>
+<table>
+  <tr><th>Stage</th><th>Result</th><th>Detail</th></tr>
+  <tr><td>Import torch_spyre</td><td><span class="badge badge-pass">PASS</span></td><td>Spyre available=True, device_count=1</td></tr>
+  <tr><td>Eager add (fp16, 4×4)</td><td><span class="badge badge-pass">PASS</span></td><td>shape=(4,4)</td></tr>
+  <tr><td>Compiled add (fp16, 128×128)</td><td><span class="badge badge-pass">PASS</span></td><td>torch.compile() default Inductor backend on Spyre</td></tr>
+  <tr><td>E2E Qwen3 0.6B (5 tokens)</td><td><span class="badge badge-pass">PASS</span></td><td>Load: 3.9s, Generate: 80.3s, Output: " Paris. The capital of"</td></tr>
+</table>
+
+<h2>Cross-Repo API Mismatches</h2>
+<p>None detected. All three components built clean against their respective HEADs (deeptools master, flex main, torch-spyre main). FlexAllocator API additions in flex landed without breaking torch-spyre callers.</p>
+
+<div class="report-footer">
+  Generated 2026-05-28 by daily-health-check skill | torch-spyre ecosystem
+</div>
+
+</body>
+</html>

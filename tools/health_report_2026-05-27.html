@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>torch-spyre Ecosystem Health Report — 2026-05-27</title>
+<style>
+  :root {
+    --navy: #1F3A5F;
+    --navy-light: #2C5282;
+    --gray-bg: #F5F7FA;
+    --gray-text: #6B7280;
+    --green: #28A745;
+    --red: #DC3545;
+    --amber: #FFC107;
+    --border: #E2E8F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    padding: 20mm;
+    max-width: 210mm;
+    margin: 0 auto;
+  }
+
+  @media print {
+    body { padding: 15mm 20mm; }
+    .page-break { page-break-before: always; }
+  }
+
+  .report-header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+  .report-header h1 {
+    font-size: 22pt;
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .report-header .subtitle {
+    font-size: 11pt;
+    color: var(--gray-text);
+  }
+
+  h2 {
+    background: var(--navy);
+    color: white;
+    font-size: 11pt;
+    font-weight: 600;
+    padding: 6px 12px;
+    margin: 20px 0 10px 0;
+    border-radius: 3px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    font-size: 10pt;
+  }
+  th {
+    background: var(--navy);
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 10px;
+  }
+  td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td {
+    background: var(--gray-bg);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badge-pass { background: #D4EDDA; color: #155724; }
+  .badge-fail { background: #F8D7DA; color: #721C24; }
+  .badge-warn { background: #FFF3CD; color: #856404; }
+  .badge-info { background: #D1ECF1; color: #0C5460; }
+
+  .risk-high { color: var(--red); font-weight: 700; }
+  .risk-med { color: var(--amber); font-weight: 600; }
+  .risk-low { color: var(--green); font-weight: 600; }
+
+  .action-items {
+    list-style: none;
+    counter-reset: action;
+    padding: 0;
+  }
+  .action-items li {
+    counter-increment: action;
+    padding: 6px 0 6px 32px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .action-items li::before {
+    content: counter(action);
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 9pt;
+    font-weight: 700;
+    color: white;
+  }
+  .action-items li.priority-high::before { background: var(--red); }
+  .action-items li.priority-med::before { background: var(--amber); }
+  .action-items li.priority-low::before { background: var(--green); }
+
+  .triage-block {
+    background: var(--gray-bg);
+    border-left: 4px solid var(--red);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 10pt;
+  }
+  .triage-block h3 {
+    font-size: 10pt;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .triage-block p { margin: 2px 0; }
+
+  .summary-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .summary-card {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .summary-card .value {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .summary-card .label {
+    font-size: 9pt;
+    color: var(--gray-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .report-footer {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 9pt;
+    color: var(--gray-text);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>torch-spyre Ecosystem Health Report</h1>
+  <div class="subtitle">Date: 2026-05-27 &nbsp;|&nbsp; Pod: rganti-spyre-main &nbsp;|&nbsp; PyTorch: 2.11.0+cpu</div>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-row">
+  <div class="summary-card">
+    <div class="value" style="color: var(--green);">3/3</div>
+    <div class="label">Build Pass</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color: var(--red);">FAIL</div>
+    <div class="label">Nightly CI</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">20</div>
+    <div class="label">PRs Merged (7d)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">30</div>
+    <div class="label">Open Bugs</div>
+  </div>
+</div>
+
+<h2>What Needs Attention</h2>
+<ol class="action-items">
+  <li class="priority-high"><strong>Nightly cat zero-tensor regression persists</strong> — <code>test_cat_4d_dim2_zero</code> and <code>test_cat_4d_dim_m2_empty_first</code> failing for 5+ consecutive nightly runs (since at least 2026-05-23). PR #2259 ("Fix aten.cat lowering crash with zero-sized tensor inputs", merged 2026-05-22) does NOT cover these cases. No open issue or fix PR. Needs ownership.</li>
+  <li class="priority-med"><strong>PR #2218 (Upgrade to PT 2.12) idle</strong> — Open since 2026-05-21 by ani300, REVIEW_REQUIRED, no recent reviewer activity. Blocks future PT alignment.</li>
+  <li class="priority-med"><strong>23 PRs stalled &gt;7 days</strong> — Substantial review backlog, including #2107 (LayerNorm fp32 fix), #2059 (CI gate-job suite reporting), #2128 (xfail xdist SIGSEGV), #2055 (xfail fp32 lx-planning).</li>
+  <li class="priority-low"><strong>26 open model-enablement bugs across Granite/Mistral/Llama/Ministral</strong> — Mostly INT32/INT64 dtype and fp32 op gaps. Driving June2026 milestone. No new bugs in last 24h.</li>
+</ol>
+
+<h2>Build Status</h2>
+<table>
+  <tr><th>Component</th><th>Commit</th><th>Status</th><th>Notes</th></tr>
+  <tr>
+    <td>deeptools</td>
+    <td><code>940d8d34fe</code> — [DDC/ddl] subchunking of across-stick reduction for sum/mean/...</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>cmake + make -j16 install (~10 min)</td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td><code>a233ca5</code> — Add region_id to segment_id mapping to FlexAllocator (#1034)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>cmake + make -j16 install (~1 min)</td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td><code>f182ab3</code> — add JobPlan launch (#2013)</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>uv sync editable install (~2 min)</td>
+  </tr>
+</table>
+
+<h2>CI Status</h2>
+<table>
+  <tr><th>Workflow</th><th>Latest</th><th>Status</th><th>Trend</th></tr>
+  <tr>
+    <td>Spyre Hardware Tests</td>
+    <td>2026-05-27</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy (3/3 recent green)</td>
+  </tr>
+  <tr>
+    <td>Linters</td>
+    <td>2026-05-27</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Upstream PyTorch Tests</td>
+    <td>2026-05-27</td>
+    <td><span class="badge badge-pass">PASS</span></td>
+    <td>Healthy</td>
+  </tr>
+  <tr>
+    <td>Nightly Tests</td>
+    <td>2026-05-27</td>
+    <td><span class="badge badge-fail">FAIL</span></td>
+    <td><span class="risk-high">Persistently failing 5+ consecutive days (cat zero-tensor)</span></td>
+  </tr>
+</table>
+
+<h2>Nightly Failure Triage</h2>
+
+<div class="triage-block">
+  <h3>Failure 1 &amp; 2: aten.cat with zero-sized tensors — PERSISTENT REGRESSION</h3>
+  <p><strong>Tests:</strong> <code>test_cat_4d_dim2_zero</code>, <code>test_cat_4d_dim_m2_empty_first</code></p>
+  <p><strong>Error:</strong> <code>InductorError: LoweringException: AssertionError</code> in <code>torch/_inductor/lowering.py:2177</code></p>
+  <p><strong>Repro signature:</strong> args[0]=[<code>FixedLayout('cpu', float16, size=[0], stride=[1])</code>, <code>FixedLayout('cpu', float16, size=[1, 8, 14, 64], stride=[7168, 896, 64, 1])</code>], args[1]=2 (or -2)</p>
+  <p><strong>Root cause:</strong> Empty 1D tensor passed in alongside a 4D tensor; cat along dim=2/-2 fails because the empty tensor only has dim 0. PR #2259 (merged 2026-05-22) addressed cat zero-sized crash but not this dim-mismatch path. Fix needs to either filter zero-numel tensors before lowering or reshape the empty tensor to match.</p>
+  <p><strong>Duration:</strong> Failing 2026-05-23, 24, 25, 26, 27 (5 consecutive nightlies confirmed)</p>
+  <p><strong>Assessment:</strong> <span class="risk-high">Regression — no open issue, no fix PR, no owner</span></p>
+</div>
+
+<p><strong>Overall nightly:</strong> 2 failed, 2293 passed, 54 skipped, 1048 deselected, 321 xfailed, 2 xpassed. Pass rate: 99.91%. Note: yesterday's nightly also had 1 flaky <code>test_layernorm_2d_lx_planning_reduction</code> failure but that did NOT recur today.</p>
+
+<h2>Version Alignment</h2>
+<table>
+  <tr><th>Check</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+  <tr>
+    <td>PyTorch</td>
+    <td><code>torch~=2.11.0</code> (pyproject.toml)</td>
+    <td><code>2.11.0+cpu</code></td>
+    <td><span class="badge badge-pass">MATCH</span></td>
+  </tr>
+  <tr>
+    <td>transformers (post-build)</td>
+    <td><code>&gt;=5.0</code> (hf_adapters)</td>
+    <td><code>4.57.6</code> after uv sync; bumped to <code>5.9.0</code> for E2E</td>
+    <td><span class="badge badge-warn">DRIFT (post-install)</span></td>
+  </tr>
+</table>
+
+<h2>Repo Drift (last 7 days)</h2>
+<table>
+  <tr><th>Repo</th><th>Commits</th><th>API-touching</th><th>Risk</th></tr>
+  <tr>
+    <td>deeptools</td>
+    <td>81</td>
+    <td>15+ (DCC, BaseOpt, RcuOpt, DataOp, DSM internals)</td>
+    <td><span class="risk-low">Low</span> — internal compiler changes, no torch-spyre API surface affected (build clean)</td>
+  </tr>
+  <tr>
+    <td>flex</td>
+    <td>12</td>
+    <td>8 (FlexAllocator MemoryType/region_id, profiler API consolidation)</td>
+    <td><span class="risk-med">Medium</span> — FlexAllocator API additions could affect future torch-spyre work; build green today</td>
+  </tr>
+  <tr>
+    <td>torch-spyre</td>
+    <td>62</td>
+    <td>—</td>
+    <td>—</td>
+  </tr>
+</table>
+
+<h2>Blocking PRs / Notable Open</h2>
+<table>
+  <tr><th>PR</th><th>Title</th><th>Why Notable</th><th>Status</th></tr>
+  <tr>
+    <td>#2218</td>
+    <td>Upgrade to PT 2.12</td>
+    <td>Future toolchain alignment</td>
+    <td>REVIEW_REQUIRED (6d open)</td>
+  </tr>
+  <tr>
+    <td>#2107</td>
+    <td>Fix layernormscale output scale for fp32 LayerNorm</td>
+    <td>Fixes #1980 LayerNorm correctness bug</td>
+    <td>REVIEW_REQUIRED (12d open, stalled)</td>
+  </tr>
+  <tr>
+    <td>#2298</td>
+    <td>Fix core-div-mismatch logic with PerCoreView</td>
+    <td>Backend correctness (DRAFT)</td>
+    <td>DRAFT (1d)</td>
+  </tr>
+  <tr>
+    <td>#2261</td>
+    <td>Clean up spyre::overwrite usage</td>
+    <td>Touches cat path; potential nightly fix candidate</td>
+    <td>REVIEW_REQUIRED</td>
+  </tr>
+  <tr>
+    <td>#2250</td>
+    <td>Coarse-Tiling Loop IR for the Spyre Backend</td>
+    <td>Major IR change, dgrove-oss</td>
+    <td>REVIEW_REQUIRED (5d)</td>
+  </tr>
+  <tr>
+    <td>#2003</td>
+    <td>Add utility to support PyTorch mark_dynamic API with max</td>
+    <td>Dynamic shapes support</td>
+    <td>REVIEW_REQUIRED (16d, stalled)</td>
+  </tr>
+</table>
+
+<h2>Project Velocity (last 7 days)</h2>
+<table>
+  <tr><th>Metric</th><th>Count</th></tr>
+  <tr><td>PRs merged</td><td>20</td></tr>
+  <tr><td>Open PRs (non-draft)</td><td>~35</td></tr>
+  <tr><td>Stalled PRs (no activity &gt;7d)</td><td>23</td></tr>
+  <tr><td>Recent merges include</td><td>#2319, #2318, #2312, #2307 (docs drift fix), #2303, #2301, #2297, #2283, #2277, #2274, #2273, #2270, #2269, #2268, #2267, #2263, #2259 (cat zero-size), #2251, #2299 (Inductor parallel shards)</td></tr>
+</table>
+
+<h2>Open Bugs</h2>
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Total open bugs</td><td>30</td></tr>
+  <tr><td>New (last 24h)</td><td>0</td></tr>
+  <tr><td>Closed in last 7 days</td><td>7+ (e.g. #2087, #2070, #1968, #1886, #1884, #1881, #1850)</td></tr>
+  <tr><td>Critical/priority labels</td><td>None set (no priority labels in use)</td></tr>
+</table>
+
+<h3 style="font-size: 11pt; margin-top: 10px;">Bug Distribution (top categories)</h3>
+<table>
+  <tr><th>Category</th><th>Count</th><th>Examples</th></tr>
+  <tr>
+    <td>Model enablement (Granite/Mistral/Llama/Ministral)</td>
+    <td>~18</td>
+    <td>#1849 add+alpha, #1880/#1942 index_copy_, #1971 pow RMSNorm, #1970 linear, #1969 rsqrt, #1837 max, #1497/#1482 to/float, #2207 Ministral stick expr</td>
+  </tr>
+  <tr>
+    <td>Inductor / propagate_hints</td>
+    <td>4</td>
+    <td>#2247 hint loss after AOT mutations, #2246 thread-safety, #2166 softmax lx perf, #2195 MHA compile</td>
+  </tr>
+  <tr>
+    <td>Backend compiler</td>
+    <td>1</td>
+    <td>#1996 dl16tofp32 zeroed elements wider than 16</td>
+  </tr>
+  <tr>
+    <td>Numerical correctness</td>
+    <td>3</td>
+    <td>#1980 LayerNorm elementwise_affine=False, #1919 contiguous, #1918 matmul large shapes</td>
+  </tr>
+  <tr>
+    <td>Op coverage gaps</td>
+    <td>4</td>
+    <td>#1485/#1488/#1489 all/eq, #1714 unsqueeze int64</td>
+  </tr>
+</table>
+
+<h2>Smoke Test (post-build)</h2>
+<table>
+  <tr><th>Stage</th><th>Result</th><th>Detail</th></tr>
+  <tr><td>Import torch_spyre</td><td><span class="badge badge-pass">PASS</span></td><td>Spyre available=True, device_count=1</td></tr>
+  <tr><td>Eager add (fp16, 4×4)</td><td><span class="badge badge-pass">PASS</span></td><td>shape=(4,4)</td></tr>
+  <tr><td>Compiled add (fp16, 128×128)</td><td><span class="badge badge-pass">PASS</span></td><td>torch.compile() default Inductor backend on Spyre</td></tr>
+  <tr><td>E2E Qwen3 0.6B (5 tokens)</td><td><span class="badge badge-pass">PASS</span></td><td>Load: 6.1s, Generate: 79.8s, Output: " Paris. The capital of"</td></tr>
+</table>
+
+<h2>Cross-Repo API Mismatches</h2>
+<p>None detected. All three components built clean against their respective HEADs (deeptools master, flex main, torch-spyre main).</p>
+
+<div class="report-footer">
+  Generated 2026-05-27 by daily-health-check skill | torch-spyre ecosystem
+</div>
+
+</body>
+</html>
